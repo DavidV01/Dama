@@ -1,4 +1,11 @@
+from ast import Break
+from Stone import stone
+from C_M import center_mouse
+from updt import screen_update
+from Is_st import is_stone
+from Is_st import is_true
 import pygame as pg
+from Plr import Player   #ošetřit, že jen ten hráč, co hraje hýbá se svými kameny
 
 def move_stone(mouse_p,ws,bs,bg,scr,tile_s,ch_stone,new_rct_pos):     #ch_stone a new_rct_pos musim volat, protože si je musím pamatovat globálně, abych se na ně mohl odkázat znovu
     
