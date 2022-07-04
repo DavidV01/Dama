@@ -1,6 +1,17 @@
-class stone:
+class Figure:
+    def __innit__(self,name):
+        self._name=name
+
+    def get_name(self):
+        return self._name
+
+
+
+
+
+class stone(Figure):
     def __init__(self,name,color, center, radius):
-        self._name = name
+        super().__innit__(name)
         self._center = center
         self._radius = radius        
         self._color=color    
@@ -13,8 +24,7 @@ class stone:
         print(str(self._color))
         return "\n"
 
-    def get_name(self):
-        return self._name
+    
    
 
     def center(self,center):

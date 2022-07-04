@@ -16,4 +16,8 @@ def Chosed(mouse_p,ws,bs,bg,scr,ch_stone,Pl_now):
             screen_update(scr,bg)
                     #print(ch_stone[0]) 
 
+            center=ch_stone[0].get_center()            
+            print(center)
+
+
     return ch_stone

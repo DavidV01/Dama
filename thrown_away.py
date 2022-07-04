@@ -7,3 +7,15 @@ def away(stones,thr_aw):
     
     return thr_aw
 
+def filt(stones,thrown):
+    y=[]
+    for i in range(len(stones)):
+        if (stones[i].get_name()) in (thrown):                       
+            y.append(i)
+
+    for i in range(len(y)):
+        stones.pop()          
+    return stones
+        
+
+
