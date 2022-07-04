@@ -13,8 +13,10 @@ from move import move_stone
 from Plr import Player
 from Is_st import is_true
 from Chosed_stone import Chosed
+from crt_tree import create_tree
+from thrown_away import away,filt
 
-#stále neřeším dámu
+#STÁLE NEŘEŠÍM DÁMU!!!!!!!!!!!!!!
 
 def main():
     #názvy pro kameny
@@ -23,6 +25,8 @@ def main():
     chosed_stone=[]  
     n_rct_pos=[0,0]
     Players=[]
+    thrown_aw_b=[]
+    thrown_aw_w=[]
 
     next_plr=False    #další hráč nehraje, dokud neřeknu, že hraje
 
@@ -46,11 +50,24 @@ def main():
     Player_now=Players[0]
 
     load_stones(w_stones,b_stones)
+    
 
     
     #kontrola položení kamenů, zda je v csv vše správně atd.
     if place_stones(w_stones,b_stones)==True:
-                 
+        
+        #vyhození kamenů, co nejsou ve hře
+        thrown_aw_w=away(w_stones,thrown_aw_w)
+        thrown_aw_b=away(b_stones,thrown_aw_b)
+
+        print(thrown_aw_w)
+        print(thrown_aw_b)
+
+        #filtrování kamenů tak, aby zbyl jen ty, co jsou ve hře
+        #pro ně udělat stromy
+        w_stones=filt(w_stones,thrown_aw_w)
+        b_stones=filt(b_stones,thrown_aw_b)        
+
 
         #BĚH PROGRAMU
         #inicializuje všechny pygame moduly
@@ -76,13 +93,13 @@ def main():
                 rectangle=pg.draw.rect(background, clr, rect)
                 
                 #vykreslení kamenů
-                for i in range(12):
+                for i in range(len(w_stones)):
                     if w_stones[i].get_center()==[0,0]:               #pokud má střed v (0,0), pak není ve hře => nevykreslí se
                       break 
                     else:
                         pg.draw.circle(background, 'white', w_stones[i].get_center(),40)                
 
-                for i in range(12):
+                for i in range(len(b_stones)):
                     if b_stones[i].get_center()==[0,0]:
                       break
                     else: 
@@ -92,7 +109,10 @@ def main():
         game_exit = False
     
         #pozadí a ohraničení
-        screen_update(screen,background)       
+        screen_update(screen,background)  
+
+        #vytvoř tahy pro všechyn figurky
+        #create_tree(w_stones,b_stones)
 
         #běh okna/programu a eventy v něm
         while not game_exit:
@@ -119,6 +139,7 @@ def main():
                             #nová pozice pro náhradu kruhu za čtverec, při změně pozice
                             n_rct_pos[0]=mouse_position[0]-50
                             n_rct_pos[1]=mouse_position[1]-50 
+                            #available_moves=create_tree(chosed_stone,w_stones,b_stones)     #tvorba přípustných tahů pro vybraný kámen
                                                           
                         elif (chosed_stone!=[])&(bol==False):
                             next_plr=move_stone(mouse_position,background,screen,tile_size,chosed_stone,n_rct_pos,bol,next_plr)
