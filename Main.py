@@ -9,7 +9,7 @@ from C_M import center_mouse
 from updt import screen_update
 #from Is_st import is_stone
 #from Is_st import is_true
-from move import move_stone
+from move_d import move_stone
 from Plr import Player
 from Is_st import is_true
 from Chosed_stone import Chosed
