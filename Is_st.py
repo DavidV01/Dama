@@ -2,9 +2,10 @@ from Stone import stone
 
 
 def is_stone(ws,bs,mouse_pos,ch):
-    for i in range(12):
+    for i in range(len(bs)):
         if bs[i].get_center()==mouse_pos:
             return bs[i]
+    for i in range(len(ws)):
         if ws[i].get_center()==mouse_pos:
             return ws[i]
     return ch

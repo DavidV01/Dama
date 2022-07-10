@@ -19,3 +19,9 @@ def screen_update(scr,bg):
         textsurface = myfont.render(f'{i}', False, (0,0,0))
         scr.blit(textsurface,(10,poz))
         poz=poz+100
+
+def destroy_stone(center,bg):
+    print(f"mám tenhle {center}")
+    center[0]=center[0]-50
+    center[1]=center[1]-50
+    pg.draw.rect(bg,"black",pg.Rect(center[0],center[1],100,100))

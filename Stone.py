@@ -8,7 +8,7 @@ class Figure:
 
 
 
-
+#jako kruh
 class stone(Figure):
     def __init__(self,name,color, center, radius):
         super().__innit__(name)
@@ -30,6 +30,20 @@ class stone(Figure):
     def center(self,center):
         self._center=center
     
+    def get_center(self):
+        return(list(self._center))
+
+    def get_color(self):
+        return self._color
+
+#jako elipsa
+class Queen(Figure):
+    def __init__(self,name,color, center, radius):
+        super().__innit__(name)
+        self._center = center
+        self._radius = radius        
+        self._color=color
+
     def get_center(self):
         return(list(self._center))
 
