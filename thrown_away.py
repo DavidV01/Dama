@@ -17,5 +17,11 @@ def filt(stones,thrown):
         stones.pop()          
     return stones
         
+def waiting(queen,w_q):
+    for i in range(len(queen)):
+        if queen[i].get_center()==[0,0]:
+            w_q.append(queen[i])
+    
+    return w_q
 
 

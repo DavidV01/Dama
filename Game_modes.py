@@ -4,7 +4,7 @@ import itertools
 from l_s import load_stones
 from Pr_s import print_stones
 from Pl_s import place_stones
-from Stone import stone
+from Stone import stone,change_to_queen
 from C_M import center_mouse
 from updt import screen_update,destroy_stone
 #from Is_st import is_stone
@@ -17,11 +17,11 @@ from crt_tree import create_tree_b_l, create_tree_b_r,create_tree_w_l,create_tre
 from thrown_away import away,filt
 from center_l import center_list
 from crt_tree import Uzel
-from take import taking,tk_updt_w,tk_updt_b,c_c_w,c_c_b,queen_take_updt
+from take import taking,tk_updt_w,tk_updt_b,c_c_w,c_c_b,queen_take_updt,where_jump
 
-def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
+def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
     #w_s=white_stones,b_s,black_stones,t_a_b=thrown_aw_b,t_a_w=thrown_aw_w,Pls=Players
-
+        changed=[]    #seznam na změněné kameny
         chosed_stone=[]  
         n_rct_pos=[0,0]        
         dictionary_w={}
@@ -344,8 +344,9 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                     
                     #rozhodování o hráčích
                     if (Player_now==Pls[0])&(next_plr==True):    #pokud hráč co hraje = hráči[0], a zároveň dostaneme pokyn z fce, že hraje další hráč, pak hraje další hráč
+                        where=""
                         #odstranění černých kamenů, než se hráči změní
-                        take_updt=[]
+                        take_updt=[]                          #pomocná proměnná pro braní kamenů....odehraje hráč, projde se, zda něco vzal, pokud ne, toto bude mít hodnotu 0, jinak délku max 1
                         if queen_pref_d=={}:
                             take_updt.append(tk_updt_w(chosed_stone[0].get_center(),take))        #vyberu jen ten kámen, který beru
                             
@@ -367,16 +368,43 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                                     if b_q[i].get_name()==take_updt[0].get_name():
                                         del b_q[i]
                                         break
+                                #pokud bílá dojde na protější okraj a skočí
+                                if (chosed_stone[0].get_center()[1]==50) & (chosed_stone[0].get_name().startswith("W")) &(chosed_stone[0].get_color()=="white"):
+                                    changed.append(chosed_stone[0].get_name())
+                                    w_q.append(change_to_queen(chosed_stone,wait_q_w)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
+                                    wait_q_w.pop()
+                                    
+                                    #vykreslit dámu
+                                    rect = (chosed_stone[0].get_center()[0]-50,0, tile_size, tile_size)
+                                    pg.draw.rect(background, 'black', rect)
+                                    pg.draw.circle(background, chosed_stone[0].get_color(), chosed_stone[0].get_center(),40,20)
+                                        
+                                    #smazat ze všeho, kde se kámen vyskytuje
+                                    if chosed_stone[0].get_name() in dictionary_w.keys():
+                                        dictionary_w.pop(chosed_stone[0].get_name())
+                                    if chosed_stone[0].get_name() in preference_d.keys():
+                                        preference_d.pop(chosed_stone[0].get_name())
+                                    for i in range(len(w_s)):
+                                        if w_s[i].get_name()==chosed_stone[0].get_name():
+                                            del w_s[i]
+                                            break
+                                        
+                                    screen_update(screen,background)
                                 jump=True
 
-                        else:                            
+                        else:                                                        
                             take_updt.append(queen_take_updt(chosed_stone[0].get_center(),take))
                             t_a_b.append(take_updt[0].get_name())
+                            print(take_updt)
+                            #TADY PŘIDAT KONTROLU, KAM JSEM SKOČIL DÁMOU - skáče bílá dáma, beru černé kameny
+                            where=where_jump(chosed_stone,take_updt)
+                            print(where)
                             print(f" {Player_now.get_name()} vzal {take_updt[0].get_name()}")
                             destroy_stone(take_updt[0].get_center(),background)              #odstranění kamene z hrací plochy
                             screen_update(screen,background)
                             if take_updt[0].get_name() in dictionary_b.keys():
                                 dictionary_b.pop(take_updt[0].get_name())
+
                             for i in range(len(b_s)):
                                 if b_s[i].get_name()==take_updt[0].get_name():
                                     del b_s[i]
@@ -391,284 +419,290 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                         print(dictionary_b)
                         print(preference_d)
 
+                        #Načtu tahy pro dámy
                         queen_pref_d={}
                         take=[]
                         center_list_w=center_list(w_s,w_q)
                         center_list_b=center_list(b_s,b_q)
                         #doleva nahoru od středu dámy
-                        for i in range(len(w_q)):
-                                hop=False
-                                batch=Uzel(w_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=w_q[i].get_center()
-                                
-                                while True:
+                        if where!="down_right":
+                            for i in range(len(w_q)):
+                                    hop=False
+                                    batch=Uzel(w_q[i].get_name())
+                                    list_n=[]
+                                    x=0    #pomocné prom
+                                    y=0
+                                    center=[0,0]
+                                    center=w_q[i].get_center()
                                     
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==50) or (center[1]==750):
-                                        break
-                                    
-                                    x=center[0]-100
-                                    y=center[1]-100
-                                    
-                                    #pokud kraj plochy
-                                    if (x<50) or (y<50):
+                                    while True:
                                         
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_w:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_b):
-                                            #print(center)
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==50) or (center[1]==750):
+                                            break
+                                        
+                                        x=center[0]-100
+                                        y=center[1]-100
+                                        
+                                        #pokud kraj plochy
+                                        if (x<50) or (y<50):
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_w:
+                                            break
+                                        #pokud bílá
+                                        elif (hop==True) & ([x,y] not in center_list_b):
+                                                #print(center)
+                                                
+                                                if [x,y] not in list_n:
+                                                    list_n.append([x,y])
+                                                
+                                                center=[x,y]
+                                        elif ([x,y] in center_list_b) & (hop==False):
+                                            center1=[0,0]
+                                            center1[0]=x-100
+                                            center1[1]=y-100
                                             
+                                            
+                                            if (center1[0]<50) or (center1[1]<50):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                            
+                                                hop=True
+                                                take.append(taking(b_s,b_q,[x,y]))
+                                                list_n.append(center1)
                                             center=[x,y]
-                                    elif ([x,y] in center_list_b) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x-100
-                                        center1[1]=y-100
-                                        
-                                        
-                                        if (center1[0]<50) or (center1[1]<50):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(b_s,b_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
 
-                                    elif ([x,y] in center_list_b) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                                        queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j])      
+                                        elif ([x,y] in center_list_b) & (hop==True):                                        
+                                            break 
+                                        center=[x,y]
+                                    
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])      
      
-                            #doprava dolu od středu dámy
-                        for i in range(len(w_q)):
-                                hop=False
-                                batch=Uzel(w_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=w_q[i].get_center()
-                                
-                                while True:
+                        #doprava dolu od středu dámy
+                        if where!="up_left":
+                            for i in range(len(w_q)):
+                                    hop=False
+                                    batch=Uzel(w_q[i].get_name())
+                                    list_n=[]
+                                    x=0    #pomocné prom
+                                    y=0
+                                    center=[0,0]
+                                    center=w_q[i].get_center()
                                     
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==750) or (center[1]==750):
-                                        break
-                                    
-                                    x=center[0]+100
-                                    y=center[1]+100
-                                    
-                                    #pokud kraj plochy
-                                    if (x>750) or (y>750):
-                                        #print(f"mám se brakenout a stejně se přidám: {center}")
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_w:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_b):
-                                            #print(center)
+                                    while True:
+                                        
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==750) or (center[1]==750):
+                                            break
+                                        
+                                        x=center[0]+100
+                                        y=center[1]+100
+                                        
+                                        #pokud kraj plochy
+                                        if (x>750) or (y>750):
+                                            #print(f"mám se brakenout a stejně se přidám: {center}")
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_w:
+                                            break
+                                        #pokud bílá
+                                        elif (hop==True) & ([x,y] not in center_list_b):
+                                                #print(center)
+                                                
+                                                if [x,y] not in list_n:
+                                                    list_n.append([x,y])
+                                                
+                                                center=[x,y]
+                                        elif ([x,y] in center_list_b) & (hop==False):
+                                            center1=[0,0]
+                                            center1[0]=x+100
+                                            center1[1]=y+100
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
                                             
+                                            if (center1[0]>750) or (center1[1]>750):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                            
+                                                hop=True
+                                                take.append(taking(b_s,b_q,[x,y]))
+                                                list_n.append(center1)
                                             center=[x,y]
-                                    elif ([x,y] in center_list_b) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x+100
-                                        center1[1]=y+100
-                                        
-                                        
-                                        if (center1[0]>750) or (center1[1]>750):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(b_s,b_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
 
-                                    elif ([x,y] in center_list_b) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                                        queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j])                      
+                                        elif ([x,y] in center_list_b) & (hop==True):                                        
+                                            break 
+                                        center=[x,y]
+                                    
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])                      
                                             
                             
-                            #doprava nahoru od středu dámy                         
-                        for i in range(len(w_q)):
-                                hop=False
-                                batch=Uzel(w_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=w_q[i].get_center()
-                                
-                                while True:
+                            #doprava nahoru od středu dámy
+                        if where!="down_left":                         
+                            for i in range(len(w_q)):
+                                    hop=False
+                                    batch=Uzel(w_q[i].get_name())
+                                    list_n=[]
+                                    x=0    #pomocné prom
+                                    y=0
+                                    center=[0,0]
+                                    center=w_q[i].get_center()
                                     
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==750) or (center[1]==50):
-                                        break
-                                    
-                                    x=center[0]+100
-                                    y=center[1]-100
-                                    
-                                    #pokud kraj plochy
-                                    if (x>750) or (y<50):
-                                        #print(f"mám se brakenout a stejně se přidám: {center}")
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_w:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_b):
-                                            #print(center)
+                                    while True:
+                                        
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==750) or (center[1]==50):
+                                            break
+                                        
+                                        x=center[0]+100
+                                        y=center[1]-100
+                                        
+                                        #pokud kraj plochy
+                                        if (x>750) or (y<50):
+                                            #print(f"mám se brakenout a stejně se přidám: {center}")
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_w:
+                                            break
+                                        #pokud bílá
+                                        elif (hop==True) & ([x,y] not in center_list_b):
+                                                #print(center)
+                                                
+                                                if [x,y] not in list_n:
+                                                    list_n.append([x,y])
+                                                
+                                                center=[x,y]
+                                        elif ([x,y] in center_list_b) & (hop==False):
+                                            center1=[0,0]
+                                            center1[0]=x+100
+                                            center1[1]=y-100
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
                                             
+                                            if (center1[0]>750) or (center1[1]<50):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                            
+                                                hop=True
+                                                take.append(taking(b_s,b_q,[x,y]))
+                                                list_n.append(center1)
                                             center=[x,y]
-                                    elif ([x,y] in center_list_b) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x+100
-                                        center1[1]=y-100
-                                        
-                                        
-                                        if (center1[0]>750) or (center1[1]<50):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(b_s,b_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
 
-                                    elif ([x,y] in center_list_b) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                                        queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j])       
+                                        elif ([x,y] in center_list_b) & (hop==True):                                        
+                                            break 
+                                        center=[x,y]
+                                    
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])       
                                                           
                             #doleva dolu od středu dámy
-                        for i in range(len(w_q)):
-                                hop=False
-                                batch=Uzel(w_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=w_q[i].get_center()
-                                
-                                while True:
+                        if where!="up_right":
+                            for i in range(len(w_q)):
+                                    hop=False
+                                    batch=Uzel(w_q[i].get_name())
+                                    list_n=[]
+                                    x=0    #pomocné prom
+                                    y=0
+                                    center=[0,0]
+                                    center=w_q[i].get_center()
                                     
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==50) or (center[1]==750):
-                                        break
-                                    
-                                    x=center[0]-100
-                                    y=center[1]+100
-                                    
-                                    #pokud kraj plochy
-                                    if (x<50) or (y>750):
-                                        #print(f"mám se brakenout a stejně se přidám: {center}")
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_w:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_b):
-                                            #print(center)
+                                    while True:
+                                        
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==50) or (center[1]==750):
+                                            break
+                                        
+                                        x=center[0]-100
+                                        y=center[1]+100
+                                        
+                                        #pokud kraj plochy
+                                        if (x<50) or (y>750):
+                                            #print(f"mám se brakenout a stejně se přidám: {center}")
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_w:
+                                            break
+                                        #pokud bílá
+                                        elif (hop==True) & ([x,y] not in center_list_b):
+                                                #print(center)
+                                                
+                                                if [x,y] not in list_n:
+                                                    list_n.append([x,y])
+                                                
+                                                center=[x,y]
+                                        elif ([x,y] in center_list_b) & (hop==False):
+                                            center1=[0,0]
+                                            center1[0]=x-100
+                                            center1[1]=y+100
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
                                             
+                                            if (center1[0]<50) or (center1[1]>750):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                            
+                                                hop=True
+                                                take.append(taking(b_s,b_q,[x,y]))
+                                                list_n.append(center1)
                                             center=[x,y]
-                                    elif ([x,y] in center_list_b) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x-100
-                                        center1[1]=y+100
-                                        
-                                        
-                                        if (center1[0]<50) or (center1[1]>750):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(b_s,b_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
 
-                                    elif ([x,y] in center_list_b) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                                        queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        elif ([x,y] in center_list_b) & (hop==True):                                        
+                                            break 
+                                        center=[x,y]
+                                    
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
                        
                         preference_d=move_again_w(chosed_stone[0],center_list_w,preference_d,center_list_b,batch,w_s,l,p)    #toho mohu využít při úpravách
                         
-                        print(preference_d)
+                        print(preference_d)                        
                         
                         if (queen_pref_d!={}) & (jump==True):
+                            
                             chosed_stone.pop(0)
                             next_plr=False                            
                             continue
@@ -679,11 +713,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                                 take.append(taking(b_s,b_q,center_ch))
                             chosed_stone.pop(0)
                             next_plr=False                            
-                            continue                #přeskočím do načítání tahů pro bílé kameny
+                            continue                #přeskočím do načítání tahů pro bílé kameny -> (loop v rámci if players, až sem)
                         else:                  
-                            
+                            #ZMĚNA KAMENE, POKUD DOJDE NA DRUHÝ OKRAJ MAPY
+                            #pokud bílá dojde na protější okraj a skočí
+                            if (chosed_stone[0].get_center()[1]==50) & (chosed_stone[0].get_name().startswith("W"))&(chosed_stone[0].get_color()=="white"):
+                                changed.append(chosed_stone[0].get_name())
+                                w_q.append(change_to_queen(chosed_stone,wait_q_w)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
+                                wait_q_w.pop()
+                                
+                                #vykreslit dámu
+                                rect = (chosed_stone[0].get_center()[0]-50,0, tile_size, tile_size)
+                                pg.draw.rect(background, 'black', rect)
+                                pg.draw.circle(background, chosed_stone[0].get_color(), chosed_stone[0].get_center(),40,20)
+                                    
+                                #smazat ze všeho, kde se kámen vyskytuje
+                                if chosed_stone[0].get_name() in dictionary_w.keys():
+                                    dictionary_w.pop(chosed_stone[0].get_name())
+                                if chosed_stone[0].get_name() in preference_d.keys():
+                                    preference_d.pop(chosed_stone[0].get_name())
+                                for i in range(len(w_s)):
+                                    if w_s[i].get_name()==chosed_stone[0].get_name():
+                                        del w_s[i]
+                                        break
+                                    
+                                screen_update(screen,background)
+
                             chosed_stone.pop(0)
-                            Player_now=Pls[1]
+                            Player_now=Pls[1]   #změna hráče
                             #po každém tahu aktualizace středů kamenů
                             center_list_w=center_list(w_s,w_q)
                             center_list_b=center_list(b_s,b_q)
@@ -1183,7 +1240,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
 
 
                     elif ((Player_now==Pls[1])&(next_plr==True)):                       
-                        
+                        where=""
                         take_updt=[]
                         if queen_pref_d=={}:
                             take_updt.append(tk_updt_b(chosed_stone[0].get_center(),take))
@@ -1207,12 +1264,33 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                                         if w_q[i].get_name()==take_updt[0].get_name():
                                             del w_q[i]
                                             break
+                                    if (chosed_stone[0].get_center()[1]==750) & (chosed_stone[0].get_name().startswith("W")) &(chosed_stone[0].get_color()=="gray"):
+                                        changed.append(chosed_stone[0].get_name())
+                                        b_q.append(change_to_queen(chosed_stone,wait_q_b)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
+                                        wait_q_b.pop()
+                                            
+                                        #vykreslit dámu
+                                        rect = (chosed_stone[0].get_center()[0]-50,700, tile_size, tile_size)
+                                        pg.draw.rect(background, 'black', rect)
+                                        pg.draw.circle(background, chosed_stone[0].get_color(), chosed_stone[0].get_center(),40,20)
+                                                
+                                        #smazat ze všeho, kde se kámen vyskytuje
+                                        if chosed_stone[0].get_name() in dictionary_b.keys():
+                                            dictionary_w.pop(chosed_stone[0].get_name())
+                                        if chosed_stone[0].get_name() in preference_d.keys():
+                                            preference_d.pop(chosed_stone[0].get_name())
+                                        for i in range(len(b_s)):
+                                            if b_s[i].get_name()==chosed_stone[0].get_name():
+                                                del b_s[i]
+                                                break
+                                                
+                                        screen_update(screen,background)
                                     jump=True
-                        else:
-                            print("jsem tu2")
-                            print(take)
+                        else:                            
                             take_updt.append(queen_take_updt(chosed_stone[0].get_center(),take))
                             t_a_w.append(take_updt[0].get_name())
+                            where=where_jump(chosed_stone,take_updt)
+                            print(where)
                             print(f" {Player_now.get_name()} vzal {take_updt[0].get_name()}")
                             destroy_stone(take_updt[0].get_center(),background)              #odstranění kamene z hrací plochy
                             screen_update(screen,background)
@@ -1228,6 +1306,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                                 if w_q[i].get_name()==take_updt[0].get_name():
                                     del w_q[i]
                                     break
+                            
                             jump=True
                         print(t_a_w)
                         print(dictionary_w)
@@ -1239,273 +1318,277 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                         center_list_w=center_list(w_s,w_q)
                         center_list_b=center_list(b_s,b_q)
                         #doleva nahoru od středu dámy
-                        for i in range(len(b_q)):
-                                hop=False
-                                batch=Uzel(b_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=b_q[i].get_center()
-                                
-                                while True:
+                        if where!="down_right":
+                            for i in range(len(b_q)):
+                                    hop=False
+                                    batch=Uzel(b_q[i].get_name())
+                                    list_n=[]
+                                    x=0    #pomocné prom
+                                    y=0
+                                    center=[0,0]
+                                    center=b_q[i].get_center()
                                     
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==50) or (center[1]==750):
-                                        break
-                                    
-                                    x=center[0]-100
-                                    y=center[1]-100
-                                    
-                                    #pokud kraj plochy
-                                    if (x<50) or (y<50):
+                                    while True:
                                         
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_b:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_w):
-                                            #print(center)
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==50) or (center[1]==750):
+                                            break
+                                        
+                                        x=center[0]-100
+                                        y=center[1]-100
+                                        
+                                        #pokud kraj plochy
+                                        if (x<50) or (y<50):
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_b:
+                                            break
+                                        #pokud bílá
+                                        elif (hop==True) & ([x,y] not in center_list_w):
+                                                #print(center)
+                                                
+                                                if [x,y] not in list_n:
+                                                    list_n.append([x,y])
+                                                
+                                                center=[x,y]
+                                        elif ([x,y] in center_list_w) & (hop==False):
+                                            center1=[0,0]
+                                            center1[0]=x-100
+                                            center1[1]=y-100
                                             
+                                            
+                                            if (center1[0]<50) or (center1[1]<50):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                            
+                                                hop=True
+                                                take.append(taking(w_s,w_q,[x,y]))
+                                                list_n.append(center1)
                                             center=[x,y]
-                                    elif ([x,y] in center_list_w) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x-100
-                                        center1[1]=y-100
-                                        
-                                        
-                                        if (center1[0]<50) or (center1[1]<50):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(w_s,w_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
 
-                                    elif ([x,y] in center_list_w) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                                        queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])      
+                                        elif ([x,y] in center_list_w) & (hop==True):                                        
+                                            break 
+                                        center=[x,y]
+                                    
+                                    if list_n != []: 
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[b_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])      
      
                             #doprava dolu od středu dámy
-                        for i in range(len(b_q)):
-                                hop=False
-                                batch=Uzel(b_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=b_q[i].get_center()
-                                
-                                while True:
+                        if where!="up_left":
+                            for i in range(len(b_q)):
+                                    hop=False
+                                    batch=Uzel(b_q[i].get_name())
+                                    list_n=[]
+                                    x=0    #pomocné prom
+                                    y=0
+                                    center=[0,0]
+                                    center=b_q[i].get_center()
                                     
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==750) or (center[1]==750):
-                                        break
-                                    
-                                    x=center[0]+100
-                                    y=center[1]+100
-                                    
-                                    #pokud kraj plochy
-                                    if (x>750) or (y>750):
+                                    while True:
                                         
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_b:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_w):
-                                            #print(center)
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==750) or (center[1]==750):
+                                            break
+                                        
+                                        x=center[0]+100
+                                        y=center[1]+100
+                                        
+                                        #pokud kraj plochy
+                                        if (x>750) or (y>750):
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_b:
+                                            break
+                                        #pokud bílá
+                                        elif (hop==True) & ([x,y] not in center_list_w):
+                                                #print(center)
+                                                
+                                                if [x,y] not in list_n:
+                                                    list_n.append([x,y])
+                                                
+                                                center=[x,y]
+                                        elif ([x,y] in center_list_w) & (hop==False):
+                                            center1=[0,0]
+                                            center1[0]=x+100
+                                            center1[1]=y+100
                                             
+                                            
+                                            if (center1[0]>750) or (center1[1]>750):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                            
+                                                hop=True
+                                                take.append(taking(w_s,w_q,[x,y]))
+                                                list_n.append(center1)
                                             center=[x,y]
-                                    elif ([x,y] in center_list_w) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x+100
-                                        center1[1]=y+100
-                                        
-                                        
-                                        if (center1[0]>750) or (center1[1]>750):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(w_s,w_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
 
-                                    elif ([x,y] in center_list_w) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
+                                        elif ([x,y] in center_list_w) & (hop==True):                                        
+                                            break 
+                                        center=[x,y]
+                                    
+                                    if list_n != []: 
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[b_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])                 
+                                                
                                 
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
+                                #doprava nahoru od středu dámy 
+                            if where!="down_left":                        
+                                for i in range(len(b_q)):
+                                        hop=False
+                                        batch=Uzel(b_q[i].get_name())
+                                        list_n=[]
+                                        x=0    #pomocné prom
+                                        y=0
+                                        center=[0,0]
+                                        center=b_q[i].get_center()
                                         
-                                        queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])                 
+                                        while True:
                                             
-                            
-                            #doprava nahoru od středu dámy                         
-                        for i in range(len(b_q)):
-                                hop=False
-                                batch=Uzel(b_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=b_q[i].get_center()
-                                
-                                while True:
-                                    
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==50) or (center[1]==750):
-                                        break
-                                    
-                                    x=center[0]+100
-                                    y=center[1]-100
-                                    
-                                    #pokud kraj plochy
-                                    if (x>750) or (y<50):
-                                        
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_b:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_w):
-                                            #print(center)
+                                            if center==[0,0]:
+                                                break
+                                            elif (center[0]==50) or (center[1]==750):
+                                                break
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
+                                            x=center[0]+100
+                                            y=center[1]-100
                                             
+                                            #pokud kraj plochy
+                                            if (x>750) or (y<50):
+                                                
+                                                break
+                                            #pokud černá
+                                            elif [x,y] in center_list_b:
+                                                break
+                                            #pokud bílá
+                                            elif (hop==True) & ([x,y] not in center_list_w):
+                                                    #print(center)
+                                                    
+                                                    if [x,y] not in list_n:
+                                                        list_n.append([x,y])
+                                                    
+                                                    center=[x,y]
+                                            elif ([x,y] in center_list_w) & (hop==False):
+                                                center1=[0,0]
+                                                center1[0]=x+100
+                                                center1[1]=y-100
+                                                
+                                                
+                                                if (center1[0]>750) or (center1[1]<50):
+                                                    break
+                                                elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                    break
+                                                
+                                                else:                                            
+                                                    hop=True
+                                                    take.append(taking(w_s,w_q,[x,y]))
+                                                    list_n.append(center1)
+                                                center=[x,y]
+
+                                            elif ([x,y] in center_list_w) & (hop==True):                                        
+                                                break 
                                             center=[x,y]
-                                    elif ([x,y] in center_list_w) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x+100
-                                        center1[1]=y-100
                                         
-                                        
-                                        if (center1[0]>750) or (center1[1]<50):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(w_s,w_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
-
-                                    elif ([x,y] in center_list_w) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                                        queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])  
+                                        if list_n != []: 
+                                            if  b_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[b_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j])  
                                                           
                             #doleva dolu od středu dámy
-                        for i in range(len(b_q)):
-                                hop=False
-                                batch=Uzel(b_q[i].get_name())
-                                list_n=[]
-                                x=0    #pomocné prom
-                                y=0
-                                center=[0,0]
-                                center=b_q[i].get_center()
-                                
-                                while True:
+                        if where!="up_right":
+                            for i in range(len(b_q)):
+                                    hop=False
+                                    batch=Uzel(b_q[i].get_name())
+                                    list_n=[]
+                                    x=0    #pomocné prom
+                                    y=0
+                                    center=[0,0]
+                                    center=b_q[i].get_center()
                                     
-                                    if center==[0,0]:
-                                        break
-                                    elif (center[0]==50) or (center[1]==750):
-                                        break
-                                    
-                                    x=center[0]-100
-                                    y=center[1]+100
-                                    
-                                    #pokud kraj plochy
-                                    if (x<50) or (y>750):
+                                    while True:
                                         
-                                        break
-                                    #pokud černá
-                                    elif [x,y] in center_list_b:
-                                        break
-                                    #pokud bílá
-                                    elif (hop==True) & ([x,y] not in center_list_w):
-                                            #print(center)
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==50) or (center[1]==750):
+                                            break
+                                        
+                                        x=center[0]-100
+                                        y=center[1]+100
+                                        
+                                        #pokud kraj plochy
+                                        if (x<50) or (y>750):
                                             
-                                            if [x,y] not in list_n:
-                                                list_n.append([x,y])
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_b:
+                                            break
+                                        #pokud bílá
+                                        elif (hop==True) & ([x,y] not in center_list_w):
+                                                #print(center)
+                                                
+                                                if [x,y] not in list_n:
+                                                    list_n.append([x,y])
+                                                
+                                                center=[x,y]
+                                        elif ([x,y] in center_list_w) & (hop==False):
+                                            center1=[0,0]
+                                            center1[0]=x-100
+                                            center1[1]=y+100
                                             
+                                            
+                                            if (center1[0]<50) or (center1[1]>750):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                            
+                                                hop=True
+                                                take.append(taking(w_s,w_q,[x,y]))
+                                                list_n.append(center1)
                                             center=[x,y]
-                                    elif ([x,y] in center_list_w) & (hop==False):
-                                        center1=[0,0]
-                                        center1[0]=x-100
-                                        center1[1]=y+100
-                                        
-                                        
-                                        if (center1[0]<50) or (center1[1]>750):
-                                            break
-                                        elif (center1 in center_list_b) or (center1 in center_list_w):
-                                            break
-                                        
-                                        else:                                            
-                                            hop=True
-                                            take.append(taking(w_s,w_q,[x,y]))
-                                            list_n.append(center1)
-                                        center=[x,y]
 
-                                    elif ([x,y] in center_list_w) & (hop==True):                                        
-                                        break 
-                                    center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                                        queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-                                    else:
-                                        for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])
+                                        elif ([x,y] in center_list_w) & (hop==True):                                        
+                                            break 
+                                        center=[x,y]
+                                    
+                                    if list_n != []: 
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[b_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])
                                 
 
                         print(f"dámy? = {queen_pref_d}")
@@ -1529,6 +1612,28 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q):
                             continue                                                 
 
                         else:
+                            #pokud černá dojde na protější okraj a skočí
+                            if (chosed_stone[0].get_center()[1]==750) & (chosed_stone[0].get_name().startswith("W")) &(chosed_stone[0].get_color()=="gray"):
+                                changed.append(chosed_stone[0].get_name())
+                                b_q.append(change_to_queen(chosed_stone,wait_q_b)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
+                                wait_q_b.pop()
+                                    
+                                #vykreslit dámu
+                                rect = (chosed_stone[0].get_center()[0]-50,700, tile_size, tile_size)
+                                pg.draw.rect(background, 'black', rect)
+                                pg.draw.circle(background, chosed_stone[0].get_color(), chosed_stone[0].get_center(),40,20)
+                                        
+                                #smazat ze všeho, kde se kámen vyskytuje
+                                if chosed_stone[0].get_name() in dictionary_b.keys():
+                                    dictionary_w.pop(chosed_stone[0].get_name())
+                                if chosed_stone[0].get_name() in preference_d.keys():
+                                    preference_d.pop(chosed_stone[0].get_name())
+                                for i in range(len(b_s)):
+                                    if b_s[i].get_name()==chosed_stone[0].get_name():
+                                        del b_s[i]
+                                        break
+                                        
+                                screen_update(screen,background)
                             chosed_stone.pop(0)
                             Player_now=Pls[0]
                             

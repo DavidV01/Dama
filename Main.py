@@ -1,30 +1,43 @@
 #import csv
 import pygame as pg
 import itertools
-from l_s import load_stones
+from l_s import load_stones,load_queens
 from Pr_s import print_stones
 from Pl_s import place_stones
 from Stone import stone
 from C_M import center_mouse
-from updt import screen_update
+from updt import screen_update,destroy_stone
 #from Is_st import is_stone
 #from Is_st import is_true
-from move_d import move_stone
+from move import move_stone,move_again_w,move_again_b
 from Plr import Player
 from Is_st import is_true
 from Chosed_stone import Chosed
+from crt_tree import create_tree_b_l, create_tree_b_r,create_tree_w_l,create_tree_w_r,create_tree_w_c,create_tree_b_c
+from thrown_away import away,filt,waiting
+from center_l import center_list
+from crt_tree import Uzel
+from take import taking,tk_updt_w,tk_updt_b,c_c_w,c_c_b
+from Game_modes import mode_pvp
 
-#stále neřeším dámu
+#STÁLE NEŘEŠÍM DÁMU!!!!!!!!!!!!!!
 
 def main():
     #názvy pro kameny
     w_stones = ["W1","W2","W3","W4","W5","W6","W7","W8","W9","W10","W11","W12"]
-    b_stones = ["B1","B2","B3","B4","B5","B6","B7","B8","B9","B10","B11","B12"] 
-    chosed_stone=[]  
-    n_rct_pos=[0,0]
-    Players=[]
+    w_queens = ["DW1","DW2","DW3","DW4","DW5","DW6"]      #dáma je ze 2 kamenů, max 6 dam, v programu budu počítat zaměnu jednoho kamene za dámu -> konec jakmile len(vyhozených) bude 12
 
-    next_plr=False    #další hráč nehraje, dokud neřeknu, že hraje
+    b_stones = ["B1","B2","B3","B4","B5","B6","B7","B8","B9","B10","B11","B12"]   
+    b_queens = ["DB1","DB2","DB3","DB4","DB5","DB6"]
+
+    Players=[]
+    thrown_aw_b=[]
+    thrown_aw_w=[]    
+    waiting_queens_w=[]
+    waiting_queens_b=[]
+   
+
+    
 
     while True:
         #zatím vše napíšu do mainu, pak rozdělit do listů!!!
@@ -42,97 +55,48 @@ def main():
         elif player_question=="PVE":
             break    
             
-    #hráč, který je teď na tahu
-    Player_now=Players[0]
-
+    
+    #načtu kameny jako entity se svým jménem a základní pozicí (0,0)
     load_stones(w_stones,b_stones)
 
-    #print_stones(w_stones,b_stones)
+    load_queens(w_queens,b_queens)   
 
-    if place_stones(w_stones,b_stones)==True:
-        #print_stones(w_stones,b_stones)          
-
-        #BĚH PROGRAMU
-        #inicializuje všechny pygame moduly
-        pg.init()                                          
-        
-        #barvy hrací plochy
-        BLACK = pg.Color('black')
-        WHITE = pg.Color('white')
-        
-        screen = pg.display.set_mode((840, 840))        #velikost okna
-        clock = pg.time.Clock()
-
-        colors = itertools.cycle((WHITE, BLACK))        #nastavení barev
-        tile_size = 100                                 #velikost čtverce
-        width, height = 8*tile_size, 8*tile_size        #velikost hrací plochy
-        background = pg.Surface((width, height))        #tvorba pozadí, na které se dále vykreslí šachovnice    
-
-        #vytvoření hrací plochy
-        for y in range(0, height, tile_size):        
-            for x in range(0, width, tile_size):            
-                rect = (x, y, tile_size, tile_size)
-                clr=next(colors)                       
-                rectangle=pg.draw.rect(background, clr, rect)
-                
-                #vykreslení kamenů
-                for i in range(12):
-                    if w_stones[i].get_center()==[0,0]:               #pokud má střed v (0,0), pak není ve hře => nevykreslí se
-                      break 
-                    else:
-                        pg.draw.circle(background, 'white', w_stones[i].get_center(),40)                
-
-                for i in range(12):
-                    if b_stones[i].get_center()==[0,0]:
-                      break
-                    else: 
-                        pg.draw.circle(background, 'gray', b_stones[i].get_center(),40)                
-              
-            next(colors)
-        game_exit = False
     
-        #pozadí a ohraničení
-        screen_update(screen,background)       
+    #kontrola položení kamenů, zda je v csv vše správně atd.
+    if place_stones(w_stones,b_stones,w_queens,b_queens)==True:
+        
+        #vyhození kamenů, co nejsou ve hře
+        thrown_aw_w=away(w_stones,thrown_aw_w)
+        thrown_aw_b=away(b_stones,thrown_aw_b)
 
-        #běh okna/programu a eventy v něm
-        while not game_exit:
-            for event in pg.event.get():           #dostává, co se děje, hlavně trackuje pozici myši, zaznamená i stisknutí
-                print(event)
-                print(f"na řadě je hráč: {Player_now.get_name()}")
-                #pokud kliknu na křížek            
-                if event.type == pg.QUIT:
-                    game_exit = True 
-                #pokud kliknu
-                if event.type == pg.MOUSEBUTTONDOWN:            
-                    mouse_position=list(pg.mouse.get_pos())
-                    mouse_position=center_mouse(mouse_position)
-                    #pokud se nerovna 0,0, tak nakresli červenj kruh s prostředkem(poté zkontroluje s kruhem)
+        print(thrown_aw_w)
+        print(thrown_aw_b)
 
-                    if mouse_position!=[0,0]:                                   #pokud jsem klikl na černý čtverec
-                        bol=is_true(w_stones,b_stones,mouse_position)                      #is true vrací boolen, proto bol
+        #nepoužité královny, tyto se budou měnit 
+        waiting_queens_w=waiting(w_queens,waiting_queens_w)
+        waiting_queens_b=waiting(b_queens,waiting_queens_b)
 
-                        if (bol==True)&(chosed_stone==[]):   #pokud je kámen, a zároveň jsem zatím žádný jiný nevybral -> nemohu vybrat 2 kameny
-                            chosed_stone=Chosed(mouse_position,w_stones,b_stones,background,screen,chosed_stone,Player_now)
-                            #nová pozice pro náhradu kruhu za čtverec, při změně pozice
-                            n_rct_pos[0]=mouse_position[0]-50
-                            n_rct_pos[1]=mouse_position[1]-50 
-                                                          
-                        elif (chosed_stone!=[])&(bol==False):
-                            next_plr=move_stone(mouse_position,background,screen,tile_size,chosed_stone,n_rct_pos,bol,next_plr)
-                            chosed_stone.pop(0)   #čištění vybraného kamene na prázdnou množinu
+        #print(waiting_queens_w)
+        #print(waiting_queens_b)
 
-                    #rozhodování o hráčích
-                    if (Player_now==Players[0])&(next_plr==True):    #pokud hráč co hraje = hráči[0], a zároveň dostaneme pokyn z fce, že hraje další hráč, pak hraje další hráč
-                        Player_now=Players[1]
-                        next_plr=False
-                    elif (Player_now==Players[1])&(next_plr==True):
-                        Player_now=Players[0]
-                        next_plr=False
+        #filtrování kamenů tak, aby zbyly jen ty, co jsou ve hře
+        #pro ně udělat tahy
+        w_stones=filt(w_stones,thrown_aw_w)
+        b_stones=filt(b_stones,thrown_aw_b) 
 
-            pg.display.flip()                        #zobrazí display
-            clock.tick(30)                          #zjistit, nemusí tu být  (pro plynulejší běh programu)      
+        #toto dořešit(možná nebudu muset, pokud to pojede)
+        #w_queens=filt(w_queens,waiting_queens_w)
+        #b_queens=filt(b_queens,waiting_queens_b)
 
-        pg.quit()  
+              
+
+
+        #načtení PVP modu
+        if player_question=="PVP":
+            mode_pvp(w_stones,b_stones,Players,thrown_aw_b,thrown_aw_w,w_queens,b_queens,waiting_queens_w,waiting_queens_b)
+        else:
+            print("konec hry")
+          
         
 if __name__=="__main__":
     main()

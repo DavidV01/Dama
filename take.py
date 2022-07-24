@@ -193,4 +193,27 @@ def c_c_b(stone,p_d):
 
             return center
 
-    
+
+def where_jump(ch_stone,tk):
+    center=ch_stone[0].get_center()
+    tk_center=tk[0].get_center()
+    x=0      #pomocná proměnná na souřadnice x
+    y=0      #na souřadnice y
+
+    x=center[0]-tk_center[0]
+    y=center[1]-tk_center[1]
+    print(center)
+    print(tk_center)
+
+    #4 možnosti, up_right, down_right, up_left, down_left -> budu vracet kam šla dáma
+    #doprava nahoru
+    if (x>0) & (y<0):
+        return "up_right"
+    elif (x>0)&(y>0):
+        return "down_right"
+    elif (x<0)&(y<0):
+        return "up_left"
+    elif (x<0)&(y>0):
+        return "down_left"
+    else:
+        return "něco se dojebalo"

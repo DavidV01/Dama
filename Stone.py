@@ -36,16 +36,27 @@ class stone(Figure):
     def get_color(self):
         return self._color
 
-#jako elipsa
+#jako DONUT
 class Queen(Figure):
     def __init__(self,name,color, center, radius):
         super().__innit__(name)
         self._center = center
         self._radius = radius        
         self._color=color
+    
+    def center(self,center):
+        self._center=center
 
     def get_center(self):
         return(list(self._center))
 
     def get_color(self):
         return self._color
+
+#funkce na změnu kamene na dámu
+def change_to_queen(ch_stone,w_q_w):
+    ct=ch_stone[0].get_center()
+    
+    w_q_w[0].center(ct)
+
+    return w_q_w[0]

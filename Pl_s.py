@@ -1,8 +1,9 @@
 import csv
 from Stone import stone
+from check_en import check_entry
 
-def place_stones(ws,bs):       #už asi veškerá kontrola hotova, chce to někoho, kdo to bude testovat
-    filename="dama4.csv"
+def place_stones(ws,bs,wq,bq):       #už asi veškerá kontrola hotova, chce to někoho, kdo to bude testovat
+    filename="dama3.csv"
     available_positions=["a7","a5","a3","a1","b8","b6","b4","b2","c7","c5","c3","c1","d8","d6","d4","d2","e7","e5","e3","e1","f8","f6","f4","f2","g7","g5","g3","g1","h8","h6","h4","h2"]     #pozice, kde mohou být kameny
     used_positions=[]           #pro kontrolu použitých polí
 
@@ -43,13 +44,22 @@ def place_stones(ws,bs):       #už asi veškerá kontrola hotova, chce to něko
 
     #pomocné proměnné, pro pohyb v class stone
     b_count=0
+    bq_count=0
     w_count=0
+    wq_count=0
+    csvreader=[]
 
     #otevření csv
     with open(filename,"r") as csvfile:
-        csvreader =list(csv.reader(csvfile,delimiter=';'))    
-    
-        #chyba vstupu csv
+        reader =list(csv.reader(csvfile, skipinitialspace=True,delimiter=';',quoting=csv.QUOTE_NONE))   
+       
+       #dávám whitespace pryč
+        for i in range(len(reader)):
+            if reader[i]!=[]:
+                csvreader.append(reader[i])
+         
+
+        #chyba vstupu csv........1dáma=2kameny, kontrola na konci, zda to tak je, či ne
         if len(csvreader)>25:                                             #špatný formát (veliksot) souboru
             raise Exception("špatný vstup csv!")
             
@@ -63,7 +73,25 @@ def place_stones(ws,bs):       #už asi veškerá kontrola hotova, chce to něko
                 bs[b_count].center(center_positions[csvreader[i][0]])
                 b_count=b_count+1
                 used_positions.append(csvreader[i][0])
+            #kontrola dámy
+            elif ((csvreader[i][0] in available_positions)&(csvreader[i][0] not in used_positions)& (csvreader[i][1]=="bb")):
+                bq[bq_count].center(center_positions[csvreader[i][0]])
+                bq_count+=1
+                used_positions.append(csvreader[i][0])
+            elif ((csvreader[i][0] in available_positions)&(csvreader[i][0] not in used_positions)& (csvreader[i][1]=="ww")):
+                wq[wq_count].center(center_positions[csvreader[i][0]])
+                wq_count+=1
+                used_positions.append(csvreader[i][0])
+
             else:                
                 raise Exception("špatný vstup csv!")
+
+        w_entry=check_entry(w_count,wq_count)
+        b_entry=check_entry(b_count,bq_count)
+
+        if w_entry==True & b_entry==True:
+            return True
+        else:                
+            raise Exception("špatný vstup csv!")
                         
-        return True
+        
