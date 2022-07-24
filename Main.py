@@ -14,7 +14,7 @@ from Plr import Player
 from Is_st import is_true
 from Chosed_stone import Chosed
 from crt_tree import create_tree_b_l, create_tree_b_r,create_tree_w_l,create_tree_w_r,create_tree_w_c,create_tree_b_c
-from thrown_away import away,filt
+from thrown_away import away,filt,waiting
 from center_l import center_list
 from crt_tree import Uzel
 from take import taking,tk_updt_w,tk_updt_b,c_c_w,c_c_b
@@ -33,6 +33,8 @@ def main():
     Players=[]
     thrown_aw_b=[]
     thrown_aw_w=[]    
+    waiting_queens_w=[]
+    waiting_queens_b=[]
    
 
     
@@ -70,17 +72,28 @@ def main():
         print(thrown_aw_w)
         print(thrown_aw_b)
 
-        #filtrování kamenů tak, aby zbyl jen ty, co jsou ve hře
-        #pro ně udělat stromy
+        #nepoužité královny, tyto se budou měnit 
+        waiting_queens_w=waiting(w_queens,waiting_queens_w)
+        waiting_queens_b=waiting(b_queens,waiting_queens_b)
+
+        #print(waiting_queens_w)
+        #print(waiting_queens_b)
+
+        #filtrování kamenů tak, aby zbyly jen ty, co jsou ve hře
+        #pro ně udělat tahy
         w_stones=filt(w_stones,thrown_aw_w)
         b_stones=filt(b_stones,thrown_aw_b) 
+
+        #toto dořešit(možná nebudu muset, pokud to pojede)
+        #w_queens=filt(w_queens,waiting_queens_w)
+        #b_queens=filt(b_queens,waiting_queens_b)
 
               
 
 
         #načtení PVP modu
         if player_question=="PVP":
-            mode_pvp(w_stones,b_stones,Players,thrown_aw_b,thrown_aw_w,w_queens,b_queens)
+            mode_pvp(w_stones,b_stones,Players,thrown_aw_b,thrown_aw_w,w_queens,b_queens,waiting_queens_w,waiting_queens_b)
         else:
             print("konec hry")
           
