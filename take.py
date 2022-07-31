@@ -95,7 +95,7 @@ def queen_take_updt(st_center,tk):
         center=[x,y]
 
 
-def tk_updt_b(stone_center,tk):       #tk=množina tohu, co mohu brát, tato fce mi řekne, co ze dvou beru
+def tk_updt_b(stone_center,tk,c_l_b):       #tk=množina tohu, co mohu brát, tato fce mi řekne, co ze dvou beru
     tk_updt=0
     new_center=[0,0]
     new_center[0]=stone_center[0]+100
@@ -104,7 +104,13 @@ def tk_updt_b(stone_center,tk):       #tk=množina tohu, co mohu brát, tato fce
     for i in range(len(tk)):
         
         if tk[i].get_center()==new_center:
-            tk_updt=tk[i]
+            new_center[0]=new_center[0]+100
+            new_center[1]=new_center[1]-100
+            if new_center in c_l_b:
+                tk_updt=0
+            else:
+                tk_updt=tk[i]
+                return tk_updt
 
     new_center=[0,0]
     new_center[0]=stone_center[0]-100
@@ -113,18 +119,32 @@ def tk_updt_b(stone_center,tk):       #tk=množina tohu, co mohu brát, tato fce
     for i in range(len(tk)):
         
         if tk[i].get_center()==new_center:
-            tk_updt=tk[i]
+            new_center[0]=new_center[0]-100
+            new_center[1]=new_center[1]-100
+            if new_center in c_l_b:
+                tk_updt=0
+            else:
+                tk_updt=tk[i]
+                return tk_updt
 
     return tk_updt
 
-def tk_updt_w(stone_center,tk):       #tk=množina tohu, co mohu brát, tato fce mi řekne, co ze dvou beru
+def tk_updt_w(stone_center,tk,c_l_w):       #tk=množina tohu, co mohu brát, tato fce mi řekne, co ze dvou beru
     tk_updt=0
+    
     new_center=[0,0]
     new_center[0]=stone_center[0]-100
     new_center[1]=stone_center[1]+100
+    x=stone_center[0]-new_center[0]
     for i in range(len(tk)):
         if tk[i].get_center()==new_center:
-            tk_updt=tk[i]
+            new_center[0]=new_center[0]-100
+            new_center[1]=new_center[1]+100
+            if new_center in c_l_w:              #pokud za tím černým je ještě bílá -> ošetření pokud 2 různé kameny, berou 2 různé kameny, ale končí na stejném místě
+                tk_updt=0
+            else:
+                tk_updt=tk[i]
+                return tk_updt
             
 
     new_center=[0,0]
@@ -133,7 +153,13 @@ def tk_updt_w(stone_center,tk):       #tk=množina tohu, co mohu brát, tato fce
 
     for i in range(len(tk)):
         if tk[i].get_center()==new_center:
-            tk_updt=tk[i]
+            new_center[0]=new_center[0]+100
+            new_center[1]=new_center[1]+100
+            if new_center in c_l_w:
+                tk_updt=0
+            else:
+                tk_updt=tk[i]
+                return tk_updt
 
     return tk_updt
 

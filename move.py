@@ -46,7 +46,9 @@ def move_again_w(stone,c_l_w,p_d,c_l_b,batch,w_stones,l,p):
     if center[0]==50:
         center[0]=center[0]+100
         center[1]=center[1]-100
-        if center in c_l_b:
+        if (center[0]==150) & (center[1]==50):
+            return p_d
+        elif center in c_l_b:
             new_center=[0,0]
             new_center[0]=center[0]+100
             new_center[1]=center[1]-100                                         
@@ -61,6 +63,7 @@ def move_again_w(stone,c_l_w,p_d,c_l_b,batch,w_stones,l,p):
         center[0]=center[0]-100
         center[1]=center[1]-100
 
+        
         if center in c_l_b: 
             new_center=[0,0]
             new_center[0]=center[0]-100
@@ -139,8 +142,10 @@ def move_again_b(stone,c_l_w,p_d,c_l_b,batch,w_queentones,l,p):
     elif center[0]==750:
         center[0]=center[0]-100
         center[1]=center[1]+100
+        if (center[0]==650) &(center[1]==750):
+            return p_d
 
-        if center in c_l_w: 
+        elif center in c_l_w: 
             new_center=[0,0]
             new_center[0]=center[0]-100
             new_center[1]=center[1]+100                                        
@@ -252,15 +257,14 @@ def queens_move(wh_queen,c_l_w,c_l_b):
 def load_to_dict(w_queen,route,d,c_l_w,c_l_b):
 
     #pro každou dámu ze seznamu dam
-    for i in range(len(w_queen)):                       #testovací, poté len(w_queen)
+    for i in range(len(w_queen)):                       
         
         #pokud je královna v seznamu cesty
         if w_queen[i].get_center() in route:
 
             start = where_from(w_queen[i],route,c_l_w,c_l_b) #odkud
             end = where_to(w_queen[i],route,c_l_w,c_l_b) #kam
-            #print(start)
-            #print(end)
+            
             #aby začínala s prázdným seznamem
             if w_queen[i].get_name() not in d.keys():
                 d[f"{w_queen[i].get_name()}"]=[]            
@@ -278,7 +282,7 @@ def load_to_dict(w_queen,route,d,c_l_w,c_l_b):
 #odkud
 def where_from(w_qu,route,c_l_w,c_l_b):
     x=0    #odkud
-    check=0
+    check=0         #kontrola pro to, abych načítal další prvek ze seznamu cesty
     
     for i in range(len(route)):
         if route[i] in c_l_w:    #pokud je tam bílá, je mi to jedno
@@ -314,6 +318,7 @@ def where_to(w_qu,route,c_l_w,c_l_b):
                 
                 check=w_qu.get_center()[0]-c_l_b[j][0]
                 
+                
                 if (route[i]==c_l_b[j]) & (check<0):
                     x=i  #abych začínal od předešlého prvku
                     break
@@ -323,276 +328,355 @@ def where_to(w_qu,route,c_l_w,c_l_b):
 
     return len(route)  
 
-def move_again_b_q(b_q,queen_pref_d,center_list_b,center_list_w):
-    queen_pref_d={}
-    #doleva nahoru od středu dámy
-    for i in range(len(b_q)):
-        hop=False
-        batch=Uzel(b_q[i].get_name())
-        list_n=[]
-        x=0    #pomocné prom
-        y=0
-        center=[0,0]
-        center=b_q[i].get_center()
+def queen_again_move_b(center_list_w,center_list_b,a,b,kam):   #zda se mohu po braní dámou znovu hnout, pokud ano, načtu jen ty pozice, pro které to platí,dodělat směr, ze kterého jsem přišel
                                 
-        while True:
-                                    
-            if center==[0,0]:
-                break
-            elif (center[0]==50) or (center[1]==750):
-                break
-                                    
-            x=center[0]-100
-            y=center[1]-100
-                                    
-            #pokud kraj plochy
-            if (x<50) or (y<50):
-                                        
-                break
-                                    #pokud černá
-            elif [x,y] in center_list_b:
-                break
-                                    #pokud bílá
-            elif (hop==True) & ([x,y] not in center_list_w):
-                                            #print(center)
-                                            
-                    if [x,y] not in list_n:
-                        list_n.append([x,y])
-                                            
-                        center=[x,y]
-            elif ([x,y] in center_list_w) & (hop==False):
-                center1=[0,0]
-                center1[0]=x-100
-                center1[1]=y-100
-                                        
-                                        
-                if (center1[0]<50) or (center1[1]<50):
-                    break
-                elif (center1 in center_list_b) or (center1 in center_list_w):
-                    break
-                                        
-                else:                                            
-                    hop=True
-                                            
-                    list_n.append(center1)
-                    center=[x,y]
+                                list=[]        #pomocný seznam, který budu vracet                        
+                                x=0
+                                y=0
+                                
 
-            elif ([x,y] in center_list_w) & (hop==True):                                        
-                    break 
-            center=[x,y]
-                                
-            if list_n != []: 
-                if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                    queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                    for j in range(len(list_n)):            
-                        queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-                else:
-                    for j in range(len(list_n)): 
-                        queen_pref_d[b_q[i].get_name()].append(list_n[j])      
-     
-            #doprava dolu od středu dámy
-    for i in range(len(b_q)):
-        hop=False
-        batch=Uzel(b_q[i].get_name())
-        list_n=[]
-        x=0    #pomocné prom
-        y=0
-        center=[0,0]
-        center=b_q[i].get_center()
-                                
-        while True:
+                                #doleva nahoru od políčka, které mi jsem přijde
+                                if kam!="dopd":
+                                    center=[a,b]
                                     
-            if center==[0,0]:
-                break
-            elif (center[0]==750) or (center[1]==750):
-                break
-                                    
-            x=center[0]+100
-            y=center[1]+100
-                                    
-            #pokud kraj plochy
-            if (x>750) or (y>750):
+                                    while True:
                                         
-                break
-            #pokud černá
-            elif [x,y] in center_list_b:
-                break
-            #pokud bílá
-            elif (hop==True) & ([x,y] not in center_list_w):
-                     #print(center)
+                                        if center==[0,0]:
+                                            break
+                                        elif (center[0]==50) or (center[1]==50):
+                                            break
+                                        
+                                        x=center[0]-100
+                                        y=center[1]-100
+                                        
+                                        #pokud kraj plochy
+                                        if (x<50) or (y<50):
                                             
-                    if [x,y] not in list_n:
-                        list_n.append([x,y])
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_b:
+                                            break
+                                        
+                                        #pokud bílá
+                                        elif ([x,y] in center_list_w):
+                                            center1=[0,0]
+                                            center1[0]=x-100
+                                            center1[1]=y-100
                                             
-                    center=[x,y]
-            elif ([x,y] in center_list_w) & (hop==False):
-                center1=[0,0]
-                center1[0]=x+100
-                center1[1]=y+100
-                                        
-                                        
-                if (center1[0]>750) or (center1[1]>750):
-                    break
-                elif (center1 in center_list_b) or (center1 in center_list_w):
-                    break
-                                        
-                else:                                            
-                    hop=True
                                             
-                    list_n.append(center1)
-                center=[x,y]
-
-            elif ([x,y] in center_list_w) & (hop==True):                                        
-                break 
-            center=[x,y]
+                                            if (center1[0]<50) or (center1[1]<50):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                          
+                                                if [a,b] not in list:
+                                                    list.append([a,b])
+                                                    break
+                                            center=[x,y]
+                                        
+                                        center=[x,y]                               
+                                  
                                 
-        if list_n != []: 
-            if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                for j in range(len(list_n)):            
-                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-            else:
-                for j in range(len(list_n)): 
-                    queen_pref_d[b_q[i].get_name()].append(list_n[j])      
-              
+                                #doprava dolu od středu dámy
+                                if kam!="doln":
+                                    center=[a,b]
+                                    while True:
+                                            
+                                            if center==[0,0]:
+                                                break
+                                            elif (center[0]==750) or (center[1]==750):
+                                                break
+                                            
+                                            x=center[0]+100
+                                            y=center[1]+100
+                                            
+                                            #pokud kraj plochy
+                                            if (x>750) or (y>750):
+                                                
+                                                break
+                                            #pokud černá
+                                            elif [x,y] in center_list_b:
+                                                break
+                                            
+                                            #pokud bílá
+                                            elif ([x,y] in center_list_w):
+                                                center1=[0,0]
+                                                center1[0]=x+100
+                                                center1[1]=y+100
+                                                
+                                                
+                                                if (center1[0]>750) or (center1[1]>750):
+                                                    break
+                                                elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                    break
+                                                
+                                                else:                                          
+                                                    if [a,b] not in list:
+                                                        list.append([a,b])
+                                                        break
+                                                center=[x,y]
+                                            
+                                            center=[x,y]                 
                                             
                             
-    #doprava nahoru od středu dámy                         
-    for i in range(len(b_q)):
-        hop=False
-        batch=Uzel(b_q[i].get_name())
-        list_n=[]
-        x=0    #pomocné prom
-        y=0
-        center=[0,0]
-        center=b_q[i].get_center()
-                                
-        while True:
-                                    
-            if center==[0,0]:
-                break
-            elif (center[0]==50) or (center[1]==750):
-                break
-                                    
-            x=center[0]+100
-            y=center[1]-100
-                                    
-            #pokud kraj plochy
-            if (x>750) or (y<50):
-                                        
-                break
-            #pokud černá
-            elif [x,y] in center_list_b:
-                break
-            #pokud bílá
-            elif (hop==True) & ([x,y] not in center_list_w):
-                    #print(center)
+                                #doprava nahoru od středu dámy  
+                                if kam !="dold":                       
+                                    center=[a,b]
+                                    while True:
                                             
-                    if [x,y] not in list_n:
-                        list_n.append([x,y])
+                                            if center==[0,0]:
+                                                break
+                                            elif (center[0]==750) or (center[1]==50):
+                                                break
                                             
-                    center=[x,y]
-            elif ([x,y] in center_list_w) & (hop==False):
-                center1=[0,0]
-                center1[0]=x+100
-                center1[1]=y-100
-                                        
-                                        
-                if (center1[0]>750) or (center1[1]<50):
-                    break
-                elif (center1 in center_list_b) or (center1 in center_list_w):
-                    break
-                                        
-                else:                                            
-                    hop=True
+                                            x=center[0]+100
+                                            y=center[1]-100
                                             
-                    list_n.append(center1)
-                center=[x,y]
-
-            elif ([x,y] in center_list_w) & (hop==True):                                        
-                break 
-            center=[x,y]
-                                
-        if list_n != []: 
-            if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                for j in range(len(list_n)):            
-                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-            else:
-                for j in range(len(list_n)): 
-                    queen_pref_d[b_q[i].get_name()].append(list_n[j])  
+                                            #pokud kraj plochy
+                                            if (x>750) or (y<50):
+                                                
+                                                break
+                                            #pokud černá
+                                            elif [x,y] in center_list_b:
+                                                break
+                                            
+                                            #pokud bílá
+                                            elif ([x,y] in center_list_w):
+                                                center1=[0,0]
+                                                center1[0]=x+100
+                                                center1[1]=y-100
+                                                
+                                                
+                                                if (center1[0]>750) or (center1[1]<50):
+                                                    break
+                                                elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                    break
+                                                
+                                                else:                                          
+                                                    if [a,b] not in list:
+                                                        list.append([a,b])
+                                                        break
+                                                center=[x,y]
+                                            
+                                            center=[x,y]  
                                                           
-    #doleva dolu od středu dámy
-    for i in range(len(b_q)):
-        hop=False
-        batch=Uzel(b_q[i].get_name())
-        list_n=[]
-        x=0    #pomocné prom
-        y=0
-        center=[0,0]
-        center=b_q[i].get_center()
+                                #doleva dolu od středu dámy
+                                if kam!="dopn":
+                                    center=[a,b]
+                                    
+                                    while True:
+                                            
+                                            if center==[0,0]:
+                                                break
+                                            elif (center[0]==50) or (center[1]==750):
+                                                break
+                                            
+                                            x=center[0]-100
+                                            y=center[1]+100
+                                            print([a,b])
+                                            print([x,y])
+                                            
+                                            #pokud kraj plochy
+                                            if (x<50) or (y>750):
+                                                
+                                                break
+                                            #pokud černá
+                                            elif [x,y] in center_list_b:
+                                                break
+                                            
+                                            #pokud bílá
+                                            elif ([x,y] in center_list_w):
+                                                center1=[0,0]
+                                                center1[0]=x-100
+                                                center1[1]=y+100
+                                                
+                                                
+                                                if (center1[0]<50) or (center1[1]>750):
+                                                    break
+                                                elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                    break
+                                                
+                                                else:                                          
+                                                    if [a,b] not in list:
+                                                        list.append([a,b])
+                                                        break
+                                                center=[x,y]
+                                            
+                                            center=[x,y]
                                 
-        while True:
-                                    
-            if center==[0,0]:
-                break
-            elif (center[0]==50) or (center[1]==750):
-                break
-                                    
-            x=center[0]-100
-            y=center[1]+100
-                                    
-            #pokud kraj plochy
-            if (x<50) or (y>750):
-                                        
-                break
-            #pokud černá
-            elif [x,y] in center_list_b:
-                break
-            #pokud bílá
-            elif (hop==True) & ([x,y] not in center_list_w):
-                    #print(center)
-                                            
-                    if [x,y] not in list_n:
-                        list_n.append([x,y])
-                                            
-                    center=[x,y]
-            elif ([x,y] in center_list_w) & (hop==False):
-                center1=[0,0]
-                center1[0]=x-100
-                center1[1]=y+100
-                                        
-                                        
-                if (center1[0]<50) or (center1[1]>750):
-                    break
-                elif (center1 in center_list_b) or (center1 in center_list_w):
-                    break
-                                        
-                else:                                            
-                    hop=True
-                                            
-                    list_n.append(center1)
-                center=[x,y]
-
-            elif ([x,y] in center_list_w) & (hop==True):                                        
-                break 
-            center=[x,y]
+                                if list==[]:
+                                    return None
+                                else:
+                                    for i in range(len(list)):
+                                        return list[i]
                                 
-        if list_n != []: 
-            if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
-                queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                for j in range(len(list_n)):            
-                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
-            else:
-                for j in range(len(list_n)): 
-                    queen_pref_d[b_q[i].get_name()].append(list_n[j])
+                                
+def queen_again_move_w(center_list_w,center_list_b,a,b,kam):   #zda se mohu po braní dámou znovu hnout, pokud ano, načtu jen ty pozice, pro které to platí,dodělat směr, ze kterého jsem přišel
+                                
+                                list=[]        #pomocný seznam, který budu vracet                        
+                                x=0
+                                y=0
+                                
 
-    return queen_pref_d
+                                #doleva nahoru od políčka, které mi jsem přijde
+                                if kam!="dopd":
+                                    center=[a,b]
+                                    
+                                    while True:                                   
+                                        
+                                        
+                                        x=center[0]-100
+                                        y=center[1]-100
+                                        
+                                        #pokud kraj plochy
+                                        if (x<50) or (y<50):
+                                            
+                                            break
+                                        #pokud černá
+                                        elif [x,y] in center_list_w:
+                                            break
+                                        
+                                        #pokud bílá
+                                        elif ([x,y] in center_list_b):
+                                            center1=[0,0]
+                                            center1[0]=x-100
+                                            center1[1]=y-100
+                                            
+                                            
+                                            if (center1[0]<50) or (center1[1]<50):
+                                                break
+                                            elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                break
+                                            
+                                            else:                                          
+                                                if [a,b] not in list:
+                                                    list.append([a,b])
+                                                    break
+                                            center=[x,y]
+                                        
+                                        center=[x,y]                               
+                                  
+                                
+                                #doprava dolu od středu dámy
+                                if kam!="doln":
+                                    center=[a,b]
+                                    while True:
+                                            
+                                            
+                                            
+                                            x=center[0]+100
+                                            y=center[1]+100
+                                            
+                                            #pokud kraj plochy
+                                            if (x>750) or (y>750):
+                                                
+                                                break
+                                            #pokud černá
+                                            elif [x,y] in center_list_w:
+                                                break
+                                            
+                                            #pokud bílá
+                                            elif ([x,y] in center_list_b):
+                                                center1=[0,0]
+                                                center1[0]=x+100
+                                                center1[1]=y+100
+                                                
+                                                
+                                                if (center1[0]>750) or (center1[1]>750):
+                                                    break
+                                                elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                    break
+                                                
+                                                else:                                          
+                                                    if [a,b] not in list:
+                                                        list.append([a,b])
+                                                        break
+                                                center=[x,y]
+                                            
+                                            center=[x,y]                 
+                                            
+                                
+                                #doprava nahoru od středu dámy  
+                                if kam!="dold":                       
+                                    center=[a,b]
+                                    while True:
+                                            
+                                            
+                                            
+                                            x=center[0]+100
+                                            y=center[1]-100
+                                            
+                                            #pokud kraj plochy
+                                            if (x>750) or (y<50):
+                                                
+                                                break
+                                            #pokud černá
+                                            elif [x,y] in center_list_w:
+                                                break
+                                            
+                                            #pokud bílá
+                                            elif ([x,y] in center_list_b):
+                                                center1=[0,0]
+                                                center1[0]=x+100
+                                                center1[1]=y-100
+                                                
+                                                
+                                                if (center1[0]>750) or (center1[1]<50):
+                                                    break
+                                                elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                    break
+                                                
+                                                else:                                          
+                                                    if [a,b] not in list:
+                                                        list.append([a,b])
+                                                        break
+                                                center=[x,y]
+                                            
+                                            center=[x,y]  
+                                                       
+                                #doleva dolu od středu dámy
+                                if kam!="dopn":
+                                    center=[a,b]
+                                    
+                                    while True:
+                                        
+                                            x=center[0]-100
+                                            y=center[1]+100
+                                            
+                                            
+                                            #pokud kraj plochy
+                                            if (x<50) or (y>750):
+                                                
+                                                break
+                                            #pokud bílá
+                                            elif [x,y] in center_list_w:
+                                                break
+                                            
+                                            #pokud černá
+                                            elif ([x,y] in center_list_b):
+                                                center1=[0,0]
+                                                center1[0]=x-100
+                                                center1[1]=y+100
+                                                
+                                                
+                                                if (center1[0]<50) or (center1[1]>750):
+                                                    break
+                                                elif (center1 in center_list_b) or (center1 in center_list_w):
+                                                    break
+                                                
+                                                else: 
+                                                    print("tady")                                         
+                                                    if [a,b] not in list:
+                                                        list.append([a,b])
+                                                        break
+                                                center=[x,y]
+                                            
+                                            center=[x,y]
+                                
+                                if list==[]:
+                                    return None
+                                else:
+                                    
+                                    for i in range(len(list)):
+                                        return list[i]   

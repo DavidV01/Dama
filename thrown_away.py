@@ -24,4 +24,14 @@ def waiting(queen,w_q):
     
     return w_q
 
+def filt_q(queens,wait):
+    y=[]
+    for i in range(len(queens)):
+        if (queens[i]) in (wait):                       
+            y.append(i)
+
+    for i in range(len(y)):
+        queens.pop()          
+    return queens
+
 

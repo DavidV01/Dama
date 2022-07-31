@@ -9,13 +9,13 @@ from C_M import center_mouse
 from updt import screen_update,destroy_stone
 #from Is_st import is_stone
 #from Is_st import is_true
-from move import move_stone,move_again_w,move_again_b,queens_move,move_again_b_q
+from move import move_stone,move_again_w,move_again_b,queens_move,queen_again_move_b,queen_again_move_w
 from Plr import Player
 from Is_st import is_true
 from Chosed_stone import Chosed
 from crt_tree import create_tree_b_l, create_tree_b_r,create_tree_w_l,create_tree_w_r,create_tree_w_c,create_tree_b_c
 from thrown_away import away,filt
-from center_l import center_list
+from center_l import center_list,queen_center
 from crt_tree import Uzel
 from take import taking,tk_updt_w,tk_updt_b,c_c_w,c_c_b,queen_take_updt,where_jump
 
@@ -77,7 +77,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                     else: 
                         pg.draw.circle(background, 'gray', b_s[i].get_center(),40)
                         
-                #POKIMANE, MOJE KRÁLOVNY
+                
                 #královny, menší kroužek
                 for i in range(len(w_q)):                    
                     if w_q[i].get_center()==[0,0]:               #pokud má střed v (0,0), pak není ve hře => nevykreslí se
@@ -100,15 +100,14 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
         #vytvoř seznam všech středů pro figurky -> kontrola, která tam je "barva"
         center_list_w=center_list(w_s,w_q)
         center_list_b=center_list(b_s,b_q)
-        print(center_list_w)
-        print(center_list_b)
+        
 
         #vytvoř tahy pro všechyn figurky 
         #1.
         #braní a pohyb královny
         #queen_pref_d=    #pokud královna bude moct brát algoritmus, vyřešit, jak zjistím, co bere
         dictionary_w=queens_move(w_q,center_list_w,center_list_b)    #pouze pokud se královna bude hýbat bez braní    
-        #print(dictionary_w)
+        
 
         #TVORBA SLOVNÍKU PRO BÍLÉ KAMENY
         #projdu každý kámen
@@ -298,8 +297,8 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                 dictionary_w[f"{w_s[i].get_name()}"].append(dite.data)
                         break
     
-        print(dictionary_w)
-        print(preference_d)
+        print(f"tahy kamenů {dictionary_w}")
+        print(f"tahy pro braní kameny {preference_d}")
         print(f"na řadě je hráč: {Player_now.get_name()}")
 
         #běh okna/programu a eventy v něm
@@ -348,7 +347,8 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                         #odstranění černých kamenů, než se hráči změní
                         take_updt=[]                          #pomocná proměnná pro braní kamenů....odehraje hráč, projde se, zda něco vzal, pokud ne, toto bude mít hodnotu 0, jinak délku max 1
                         if queen_pref_d=={}:
-                            take_updt.append(tk_updt_w(chosed_stone[0].get_center(),take))        #vyberu jen ten kámen, který beru
+                            center_list_w=center_list(w_s,w_q)                            
+                            take_updt.append(tk_updt_w(chosed_stone[0].get_center(),take,center_list_w))        #vyberu jen ten kámen, který beru
                             
                             if take_updt[0]==0:
                                 print(f" {Player_now.get_name()} vzal nic")
@@ -368,11 +368,14 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     if b_q[i].get_name()==take_updt[0].get_name():
                                         del b_q[i]
                                         break
+                                jump=True
+                                wq_center=queen_center(w_q)
+                                print(f"jsem vybrán {chosed_stone[0]}")
                                 #pokud bílá dojde na protější okraj a skočí
-                                if (chosed_stone[0].get_center()[1]==50) & (chosed_stone[0].get_name().startswith("W")) &(chosed_stone[0].get_color()=="white"):
+                                if (chosed_stone[0].get_center()[1]==50) & (chosed_stone[0].get_name().startswith("W")) &(chosed_stone[0].get_color()=="white")&(chosed_stone[0].get_center() not in wq_center):
                                     changed.append(chosed_stone[0].get_name())
                                     w_q.append(change_to_queen(chosed_stone,wait_q_w)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
-                                    wait_q_w.pop()
+                                    wait_q_w.pop(0)
                                     
                                     #vykreslit dámu
                                     rect = (chosed_stone[0].get_center()[0]-50,0, tile_size, tile_size)
@@ -390,15 +393,18 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break
                                         
                                     screen_update(screen,background)
-                                jump=True
+                                    #pokud to budu dělat bez skoku po přeměně
+                                    #chosed_stone.pop()
+                                    jump=False                                
+                                
 
                         else:                                                        
                             take_updt.append(queen_take_updt(chosed_stone[0].get_center(),take))
                             t_a_b.append(take_updt[0].get_name())
-                            print(take_updt)
+                            
                             #TADY PŘIDAT KONTROLU, KAM JSEM SKOČIL DÁMOU - skáče bílá dáma, beru černé kameny
                             where=where_jump(chosed_stone,take_updt)
-                            print(where)
+                            #print(where)
                             print(f" {Player_now.get_name()} vzal {take_updt[0].get_name()}")
                             destroy_stone(take_updt[0].get_center(),background)              #odstranění kamene z hrací plochy
                             screen_update(screen,background)
@@ -415,20 +421,20 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     break
                             jump=True
 
-                        print(t_a_b)
-                        print(dictionary_b)
-                        print(preference_d)
+                        
 
                         #Načtu tahy pro dámy
                         queen_pref_d={}
                         take=[]
                         center_list_w=center_list(w_s,w_q)
                         center_list_b=center_list(b_s,b_q)
+                        #print(where)
                         #doleva nahoru od středu dámy
                         if where!="down_right":
                             for i in range(len(w_q)):
                                     hop=False
                                     batch=Uzel(w_q[i].get_name())
+                                    list_above=[]
                                     list_n=[]
                                     x=0    #pomocné prom
                                     y=0
@@ -439,7 +445,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         
                                         if center==[0,0]:
                                             break
-                                        elif (center[0]==50) or (center[1]==750):
+                                        elif (center[0]==50) or (center[1]==50):
                                             break
                                         
                                         x=center[0]-100
@@ -455,7 +461,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         #pokud bílá
                                         elif (hop==True) & ([x,y] not in center_list_b):
                                                 #print(center)
-                                                
+                                                list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"doln"))
                                                 if [x,y] not in list_n:
                                                     list_n.append([x,y])
                                                 
@@ -481,22 +487,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break 
                                         center=[x,y]
                                     
-                                    if list_n != []: 
-                                        if  w_q[i].get_name() not in queen_pref_d.keys():
-                                            
+                                    list_above=list(filter(None,list_above))
+                                    if list_above==[]:
+                                        if list_n != []: 
+                                            if  w_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[w_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                    else:
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                             queen_pref_d[w_q[i].get_name()]=[]
-                                            
-                                            for j in range(len(list_n)):            
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                                
+                                            for j in range(len(list_above)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                         else:
                                             for j in range(len(list_n)): 
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])      
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j])      
      
                         #doprava dolu od středu dámy
                         if where!="up_left":
                             for i in range(len(w_q)):
                                     hop=False
                                     batch=Uzel(w_q[i].get_name())
+                                    list_above=[]
                                     list_n=[]
                                     x=0    #pomocné prom
                                     y=0
@@ -523,7 +541,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         #pokud bílá
                                         elif (hop==True) & ([x,y] not in center_list_b):
                                                 #print(center)
-                                                
+                                                list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"dopd"))
                                                 if [x,y] not in list_n:
                                                     list_n.append([x,y])
                                                 
@@ -549,16 +567,27 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break 
                                         center=[x,y]
                                     
-                                    if list_n != []: 
-                                        if  w_q[i].get_name() not in queen_pref_d.keys():
-                                            
+                                    list_above=list(filter(None,list_above))
+                                    if list_above==[]:
+                                        if list_n != []: 
+                                            if  w_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[w_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                    else:
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                             queen_pref_d[w_q[i].get_name()]=[]
-                                            
-                                            for j in range(len(list_n)):            
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                                
+                                            for j in range(len(list_above)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                         else:
                                             for j in range(len(list_n)): 
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])                      
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j])                      
                                             
                             
                             #doprava nahoru od středu dámy
@@ -566,6 +595,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                             for i in range(len(w_q)):
                                     hop=False
                                     batch=Uzel(w_q[i].get_name())
+                                    list_above=[]
                                     list_n=[]
                                     x=0    #pomocné prom
                                     y=0
@@ -592,7 +622,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         #pokud bílá
                                         elif (hop==True) & ([x,y] not in center_list_b):
                                                 #print(center)
-                                                
+                                                list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"dopn"))
                                                 if [x,y] not in list_n:
                                                     list_n.append([x,y])
                                                 
@@ -618,22 +648,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break 
                                         center=[x,y]
                                     
-                                    if list_n != []: 
-                                        if  w_q[i].get_name() not in queen_pref_d.keys():
-                                            
+                                    list_above=list(filter(None,list_above))
+                                    if list_above==[]:
+                                        if list_n != []: 
+                                            if  w_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[w_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                    else:
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                             queen_pref_d[w_q[i].get_name()]=[]
-                                            
-                                            for j in range(len(list_n)):            
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                                
+                                            for j in range(len(list_above)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                         else:
                                             for j in range(len(list_n)): 
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])       
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j])       
                                                           
                             #doleva dolu od středu dámy
                         if where!="up_right":
                             for i in range(len(w_q)):
                                     hop=False
                                     batch=Uzel(w_q[i].get_name())
+                                    list_above=[]
                                     list_n=[]
                                     x=0    #pomocné prom
                                     y=0
@@ -660,9 +702,9 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         #pokud bílá
                                         elif (hop==True) & ([x,y] not in center_list_b):
                                                 #print(center)
-                                                
+                                                list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"dold"))
                                                 if [x,y] not in list_n:
-                                                    list_n.append([x,y])
+                                                    list_n.append([x,y])    #možné tahy obecně
                                                 
                                                 center=[x,y]
                                         elif ([x,y] in center_list_b) & (hop==False):
@@ -686,20 +728,32 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break 
                                         center=[x,y]
                                     
-                                    if list_n != []: 
-                                        if  w_q[i].get_name() not in queen_pref_d.keys():
-                                            
+                                    list_above=list(filter(None,list_above))
+                                    if list_above==[]:
+                                        if list_n != []: 
+                                            if  w_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[w_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                    else:
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                             queen_pref_d[w_q[i].get_name()]=[]
-                                            
-                                            for j in range(len(list_n)):            
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                                
+                                            for j in range(len(list_above)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                         else:
                                             for j in range(len(list_n)): 
-                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                                queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                        
                         preference_d=move_again_w(chosed_stone[0],center_list_w,preference_d,center_list_b,batch,w_s,l,p)    #toho mohu využít při úpravách
                         
-                        print(preference_d)                        
+                        print(f"braní královnou po skoku {queen_pref_d}")
+                        print(f"braní kameny po skoku {preference_d}")                        
                         
                         if (queen_pref_d!={}) & (jump==True):
                             
@@ -709,18 +763,20 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                         elif (preference_d!={}) & (jump==True):                            
                             for i in range(len(preference_d)):
                                 center_ch=c_c_w(chosed_stone[0],preference_d)          #abych dostal střed druhýho kamene,vícenásobné skákání
-                                print(center_ch)
+                                #print(center_ch)
                                 take.append(taking(b_s,b_q,center_ch))
                             chosed_stone.pop(0)
                             next_plr=False                            
                             continue                #přeskočím do načítání tahů pro bílé kameny -> (loop v rámci if players, až sem)
                         else:                  
                             #ZMĚNA KAMENE, POKUD DOJDE NA DRUHÝ OKRAJ MAPY
+                            wq_center=queen_center(w_q)
+                            print(f"jsem vybrán {chosed_stone[0]}")
                             #pokud bílá dojde na protější okraj a skočí
-                            if (chosed_stone[0].get_center()[1]==50) & (chosed_stone[0].get_name().startswith("W"))&(chosed_stone[0].get_color()=="white"):
+                            if (chosed_stone[0].get_center()[1]==50) & (chosed_stone[0].get_name().startswith("W"))&(chosed_stone[0].get_color()=="white")&(chosed_stone[0].get_center() not in wq_center):
                                 changed.append(chosed_stone[0].get_name())
                                 w_q.append(change_to_queen(chosed_stone,wait_q_w)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
-                                wait_q_w.pop()
+                                wait_q_w.pop(0)
                                 
                                 #vykreslit dámu
                                 rect = (chosed_stone[0].get_center()[0]-50,0, tile_size, tile_size)
@@ -736,7 +792,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     if w_s[i].get_name()==chosed_stone[0].get_name():
                                         del w_s[i]
                                         break
-                                    
+                                print(w_s)
                                 screen_update(screen,background)
 
                             chosed_stone.pop(0)
@@ -751,21 +807,24 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                             #po každém tahu aktualizace slovníku
                             #TVORBA PRO ČERNÉ KAMENY, SLOVNÍK
                             #nevím, jak tam dát stromy, center se konstantně přepisuje
+                            print(f"královny {b_q}")
                             #doleva nahoru od středu dámy
                             for i in range(len(b_q)):
                                 hop=False
                                 batch=Uzel(b_q[i].get_name())
+                                list_above=[]       #list pro ukládání tahů, pokud budu moct navázat skokem
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
                                 center=[0,0]
                                 center=b_q[i].get_center()
                                 
+                                
                                 while True:
                                     
                                     if center==[0,0]:
                                         break
-                                    elif (center[0]==50) or (center[1]==750):
+                                    elif (center[0]==50) or (center[1]==50):
                                         break
                                     
                                     x=center[0]-100
@@ -780,9 +839,9 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break
                                     #pokud bílá
                                     elif (hop==True) & ([x,y] not in center_list_w):
-                                            #print(center)
                                             
-                                            if [x,y] not in list_n:
+                                            list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"doln"))    #doln je směr, jdu doleva nahoru, abych neprocházel stejnou diagonálu
+                                            if ([x,y] not in list_n)&(list_above==[]):
                                                 list_n.append([x,y])
                                             
                                             center=[x,y]
@@ -807,21 +866,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break 
                                     center=[x,y]
                                 
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[b_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])      
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j])      
      
                             #doprava dolu od středu dámy
                             for i in range(len(b_q)):
                                 hop=False
                                 batch=Uzel(b_q[i].get_name())
+                                list_above=[]
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
@@ -832,7 +904,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     
                                     if center==[0,0]:
                                         break
-                                    elif (center[0]==750) or (center[1]==750):
+                                    elif (center[1]==750)or(center[0]==750):
                                         break
                                     
                                     x=center[0]+100
@@ -848,7 +920,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     #pokud bílá
                                     elif (hop==True) & ([x,y] not in center_list_w):
                                             #print(center)
-                                            
+                                            list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"dopd"))
                                             if [x,y] not in list_n:
                                                 list_n.append([x,y])
                                             
@@ -874,22 +946,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break 
                                     center=[x,y]
                                 
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[b_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])                 
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j])                 
                                             
                             
                             #doprava nahoru od středu dámy                         
                             for i in range(len(b_q)):
                                 hop=False
                                 batch=Uzel(b_q[i].get_name())
+                                list_above=[]
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
@@ -900,7 +984,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     
                                     if center==[0,0]:
                                         break
-                                    elif (center[0]==50) or (center[1]==750):
+                                    elif (center[0]==750) or (center[1]==50):
                                         break
                                     
                                     x=center[0]+100
@@ -916,7 +1000,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     #pokud bílá
                                     elif (hop==True) & ([x,y] not in center_list_w):
                                             #print(center)
-                                            
+                                            list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"dopn"))
                                             if [x,y] not in list_n:
                                                 list_n.append([x,y])
                                             
@@ -942,21 +1026,33 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break 
                                     center=[x,y]
                                 
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[b_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])  
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j])  
                                                           
                             #doleva dolu od středu dámy
                             for i in range(len(b_q)):
                                 hop=False
                                 batch=Uzel(b_q[i].get_name())
+                                list_above=[]
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
@@ -984,6 +1080,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     elif (hop==True) & ([x,y] not in center_list_w):
                                             #print(center)
                                             
+                                            list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"dold"))
                                             if [x,y] not in list_n:
                                                 list_n.append([x,y])
                                             
@@ -1008,23 +1105,33 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     elif ([x,y] in center_list_w) & (hop==True):                                        
                                         break 
                                     center=[x,y]
-                                
-                                if list_n != []: 
-                                    if  b_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[b_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[b_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[b_q[i].get_name()].append(list_n[j])
+                                            queen_pref_d[b_q[i].get_name()].append(list_above[j])                        
+                            
                                 
-
-                            print(f"dámy? = {queen_pref_d}")
+                            print(f"braní pro dámy {queen_pref_d}")
                             #mám slovník pro všechny dámy černé barvy
                             dictionary_b=queens_move(b_q,center_list_w,center_list_b)                            
-
+                            print(f"braní pro všechny kameny {dictionary_b}")
 
                             #projdu každý kámen
                             for i in range(len(b_s)):
@@ -1230,8 +1337,8 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                                 for dite in batch.deti:                            
                                                     dictionary_b[f"{b_s[i].get_name()}"].append(dite.data)
                                             break
-                            print(dictionary_b)
-                            print(preference_d)
+                            print(f"tahy pro kameny {dictionary_b}")
+                            print(f"tahy na braní kamenů {preference_d}")
                             print(f"na řadě je hráč: {Player_now.get_name()}")
                             for j in range(len(take)):
                                 print(f" {Player_now.get_name()} může brát {take[j].get_name()}")
@@ -1243,7 +1350,9 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                         where=""
                         take_updt=[]
                         if queen_pref_d=={}:
-                            take_updt.append(tk_updt_b(chosed_stone[0].get_center(),take))
+                            
+                            center_list_b=center_list(b_s,b_q)
+                            take_updt.append(tk_updt_b(chosed_stone[0].get_center(),take,center_list_b))
                             
                             if take_updt[0]==0:
                                     print(f" {Player_now.get_name()} vzal nic") 
@@ -1264,10 +1373,14 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         if w_q[i].get_name()==take_updt[0].get_name():
                                             del w_q[i]
                                             break
-                                    if (chosed_stone[0].get_center()[1]==750) & (chosed_stone[0].get_name().startswith("W")) &(chosed_stone[0].get_color()=="gray"):
+                                    jump=True
+                                    #print(f"zde2 {chosed_stone[0].get_center()}")
+                                    bq_center=queen_center(b_q)
+                                    print(f"jsem vybrán {chosed_stone[0]}")
+                                    if (chosed_stone[0].get_center()[1]==750) & (chosed_stone[0].get_name().startswith("B")) &(chosed_stone[0].get_color()=="gray")&(chosed_stone[0].get_center() not in bq_center):
                                         changed.append(chosed_stone[0].get_name())
                                         b_q.append(change_to_queen(chosed_stone,wait_q_b)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
-                                        wait_q_b.pop()
+                                        wait_q_b.pop(0)
                                             
                                         #vykreslit dámu
                                         rect = (chosed_stone[0].get_center()[0]-50,700, tile_size, tile_size)
@@ -1276,7 +1389,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                                 
                                         #smazat ze všeho, kde se kámen vyskytuje
                                         if chosed_stone[0].get_name() in dictionary_b.keys():
-                                            dictionary_w.pop(chosed_stone[0].get_name())
+                                            dictionary_b.pop(chosed_stone[0].get_name())
                                         if chosed_stone[0].get_name() in preference_d.keys():
                                             preference_d.pop(chosed_stone[0].get_name())
                                         for i in range(len(b_s)):
@@ -1285,12 +1398,15 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                                 break
                                                 
                                         screen_update(screen,background)
-                                    jump=True
+                                        #chosed_stone.pop()
+                                        jump=False
+                                        
+                                    
                         else:                            
                             take_updt.append(queen_take_updt(chosed_stone[0].get_center(),take))
                             t_a_w.append(take_updt[0].get_name())
                             where=where_jump(chosed_stone,take_updt)
-                            print(where)
+                            #print(where)
                             print(f" {Player_now.get_name()} vzal {take_updt[0].get_name()}")
                             destroy_stone(take_updt[0].get_center(),background)              #odstranění kamene z hrací plochy
                             screen_update(screen,background)
@@ -1317,11 +1433,14 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                         take=[]
                         center_list_w=center_list(w_s,w_q)
                         center_list_b=center_list(b_s,b_q)
+                        for i in range(len(w_q)):
+                            print(w_q[i].get_name())
                         #doleva nahoru od středu dámy
                         if where!="down_right":
                             for i in range(len(b_q)):
                                     hop=False
                                     batch=Uzel(b_q[i].get_name())
+                                    list_above=[]
                                     list_n=[]
                                     x=0    #pomocné prom
                                     y=0
@@ -1332,7 +1451,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         
                                         if center==[0,0]:
                                             break
-                                        elif (center[0]==50) or (center[1]==750):
+                                        elif (center[0]==50) or (center[1]==50):
                                             break
                                         
                                         x=center[0]-100
@@ -1348,7 +1467,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         #pokud bílá
                                         elif (hop==True) & ([x,y] not in center_list_w):
                                                 #print(center)
-                                                
+                                                list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"doln"))
                                                 if [x,y] not in list_n:
                                                     list_n.append([x,y])
                                                 
@@ -1374,22 +1493,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break 
                                         center=[x,y]
                                     
-                                    if list_n != []: 
-                                        if  b_q[i].get_name() not in queen_pref_d.keys():
-                                            
+                                    list_above=list(filter(None,list_above))
+                                    if list_above==[]:
+                                        if list_n != []: 
+                                            if  b_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[b_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                    else:
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                             queen_pref_d[b_q[i].get_name()]=[]
-                                            
-                                            for j in range(len(list_n)):            
-                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                                
+                                            for j in range(len(list_above)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                         else:
                                             for j in range(len(list_n)): 
-                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])      
+                                                queen_pref_d[b_q[i].get_name()].append(list_above[j])      
      
                             #doprava dolu od středu dámy
                         if where!="up_left":
                             for i in range(len(b_q)):
                                     hop=False
                                     batch=Uzel(b_q[i].get_name())
+                                    list_above=[]
                                     list_n=[]
                                     x=0    #pomocné prom
                                     y=0
@@ -1416,7 +1547,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         #pokud bílá
                                         elif (hop==True) & ([x,y] not in center_list_w):
                                                 #print(center)
-                                                
+                                                list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"dopd"))
                                                 if [x,y] not in list_n:
                                                     list_n.append([x,y])
                                                 
@@ -1442,16 +1573,27 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break 
                                         center=[x,y]
                                     
-                                    if list_n != []: 
-                                        if  b_q[i].get_name() not in queen_pref_d.keys():
-                                            
+                                    list_above=list(filter(None,list_above))
+                                    if list_above==[]:
+                                        if list_n != []: 
+                                            if  b_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[b_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                    else:
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                             queen_pref_d[b_q[i].get_name()]=[]
-                                            
-                                            for j in range(len(list_n)):            
-                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                                
+                                            for j in range(len(list_above)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                         else:
                                             for j in range(len(list_n)): 
-                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])                 
+                                                queen_pref_d[b_q[i].get_name()].append(list_above[j])                 
                                                 
                                 
                                 #doprava nahoru od středu dámy 
@@ -1459,6 +1601,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                 for i in range(len(b_q)):
                                         hop=False
                                         batch=Uzel(b_q[i].get_name())
+                                        list_above=[]
                                         list_n=[]
                                         x=0    #pomocné prom
                                         y=0
@@ -1469,7 +1612,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             
                                             if center==[0,0]:
                                                 break
-                                            elif (center[0]==50) or (center[1]==750):
+                                            elif (center[0]==750) or (center[1]==50):
                                                 break
                                             
                                             x=center[0]+100
@@ -1485,7 +1628,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             #pokud bílá
                                             elif (hop==True) & ([x,y] not in center_list_w):
                                                     #print(center)
-                                                    
+                                                    list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"dopn"))
                                                     if [x,y] not in list_n:
                                                         list_n.append([x,y])
                                                     
@@ -1511,22 +1654,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                                 break 
                                             center=[x,y]
                                         
-                                        if list_n != []: 
-                                            if  b_q[i].get_name() not in queen_pref_d.keys():
-                                                
+                                        list_above=list(filter(None,list_above))
+                                        if list_above==[]:
+                                            if list_n != []: 
+                                                if  b_q[i].get_name() not in queen_pref_d.keys():
+                                                    
+                                                    queen_pref_d[b_q[i].get_name()]=[]
+                                                    
+                                                    for j in range(len(list_n)):            
+                                                        queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                                else:
+                                                    for j in range(len(list_n)): 
+                                                        queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                        else:
+                                            if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                                 queen_pref_d[b_q[i].get_name()]=[]
-                                                
-                                                for j in range(len(list_n)):            
-                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                                    
+                                                for j in range(len(list_above)):            
+                                                    queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                             else:
                                                 for j in range(len(list_n)): 
-                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j])  
+                                                    queen_pref_d[b_q[i].get_name()].append(list_above[j])  
                                                           
                             #doleva dolu od středu dámy
                         if where!="up_right":
                             for i in range(len(b_q)):
                                     hop=False
                                     batch=Uzel(b_q[i].get_name())
+                                    list_above=[]
                                     list_n=[]
                                     x=0    #pomocné prom
                                     y=0
@@ -1553,7 +1708,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         #pokud bílá
                                         elif (hop==True) & ([x,y] not in center_list_w):
                                                 #print(center)
-                                                
+                                                list_above.append(queen_again_move_b(center_list_w,center_list_b,x,y,"dold"))
                                                 if [x,y] not in list_n:
                                                     list_n.append([x,y])
                                                 
@@ -1579,23 +1734,35 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                             break 
                                         center=[x,y]
                                     
-                                    if list_n != []: 
-                                        if  b_q[i].get_name() not in queen_pref_d.keys():
-                                            
+                                    list_above=list(filter(None,list_above))
+                                    if list_above==[]:
+                                        if list_n != []: 
+                                            if  b_q[i].get_name() not in queen_pref_d.keys():
+                                                
+                                                queen_pref_d[b_q[i].get_name()]=[]
+                                                
+                                                for j in range(len(list_n)):            
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                            else:
+                                                for j in range(len(list_n)): 
+                                                    queen_pref_d[b_q[i].get_name()].append(list_n[j])    
+                                    else:
+                                        if  b_q[i].get_name() not in queen_pref_d.keys():                                            
                                             queen_pref_d[b_q[i].get_name()]=[]
-                                            
-                                            for j in range(len(list_n)):            
-                                                queen_pref_d[b_q[i].get_name()].append(list_n[j]) 
+                                                
+                                            for j in range(len(list_above)):            
+                                                queen_pref_d[b_q[i].get_name()].append(list_above[j]) 
                                         else:
                                             for j in range(len(list_n)): 
-                                                queen_pref_d[b_q[i].get_name()].append(list_n[j])
+                                                queen_pref_d[b_q[i].get_name()].append(list_above[j])
                                 
 
-                        print(f"dámy? = {queen_pref_d}")
-                        print(f"nová feature {queen_pref_d}")
-                        preference_d=move_again_b(chosed_stone[0],center_list_w,preference_d,center_list_b,batch,b_s,l,p)
+                        print(f"braní pro dámy po skoku {queen_pref_d}")
                         
-                        print(f"xd {preference_d}")
+                        preference_d=move_again_b(chosed_stone[0],center_list_w,preference_d,center_list_b,batch,b_s,l,p)
+                        print(f"braní pro kameny po skoku {preference_d}")
+                        
+                        #print(f"xd {preference_d}")
                         
                         if (queen_pref_d!={}) & (jump==True):
                             chosed_stone.pop(0)
@@ -1612,11 +1779,15 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                             continue                                                 
 
                         else:
-                            #pokud černá dojde na protější okraj a skočí
-                            if (chosed_stone[0].get_center()[1]==750) & (chosed_stone[0].get_name().startswith("W")) &(chosed_stone[0].get_color()=="gray"):
+                            #pokud černá dojde na protější okraj 
+                            #print(f"zde {chosed_stone[0].get_center()}")
+                            #print(chosed_stone[0].get_color())
+                            bq_center=queen_center(b_q)
+                            print(f"jsem vybrán č {chosed_stone[0]}")
+                            if (chosed_stone[0].get_center()[1]==750) & (chosed_stone[0].get_name().startswith("B")) &(chosed_stone[0].get_color()=="gray")&(chosed_stone[0].get_center() not in bq_center):
                                 changed.append(chosed_stone[0].get_name())
                                 b_q.append(change_to_queen(chosed_stone,wait_q_b)) #vrací jméno královny -> musím jí smazat, přidám do seznamu býlích královen
-                                wait_q_b.pop()
+                                wait_q_b.pop(0)
                                     
                                 #vykreslit dámu
                                 rect = (chosed_stone[0].get_center()[0]-50,700, tile_size, tile_size)
@@ -1625,7 +1796,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         
                                 #smazat ze všeho, kde se kámen vyskytuje
                                 if chosed_stone[0].get_name() in dictionary_b.keys():
-                                    dictionary_w.pop(chosed_stone[0].get_name())
+                                    dictionary_b.pop(chosed_stone[0].get_name())
                                 if chosed_stone[0].get_name() in preference_d.keys():
                                     preference_d.pop(chosed_stone[0].get_name())
                                 for i in range(len(b_s)):
@@ -1649,6 +1820,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                             for i in range(len(w_q)):
                                 hop=False
                                 batch=Uzel(w_q[i].get_name())
+                                list_above=[]
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
@@ -1659,7 +1831,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     
                                     if center==[0,0]:
                                         break
-                                    elif (center[0]==50) or (center[1]==750):
+                                    elif (center[0]==50) or (center[1]==50):
                                         break
                                     
                                     x=center[0]-100
@@ -1675,7 +1847,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     #pokud bílá
                                     elif (hop==True) & ([x,y] not in center_list_b):
                                             #print(center)
-                                            
+                                            list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"doln"))
                                             if [x,y] not in list_n:
                                                 list_n.append([x,y])
                                             
@@ -1701,21 +1873,33 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break 
                                     center=[x,y]
                                 
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j])      
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j])      
      
                             #doprava dolu od středu dámy
                             for i in range(len(w_q)):
                                 hop=False
                                 batch=Uzel(w_q[i].get_name())
+                                list_above=[]
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
@@ -1742,7 +1926,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     #pokud bílá
                                     elif (hop==True) & ([x,y] not in center_list_b):
                                             #print(center)
-                                            
+                                            list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"dopd"))
                                             if [x,y] not in list_n:
                                                 list_n.append([x,y])
                                             
@@ -1768,22 +1952,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break 
                                     center=[x,y]
                                 
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j])                      
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j])                     
                                             
                             
                             #doprava nahoru od středu dámy                         
                             for i in range(len(w_q)):
                                 hop=False
                                 batch=Uzel(w_q[i].get_name())
+                                list_above=[]
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
@@ -1810,7 +2006,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     #pokud bílá
                                     elif (hop==True) & ([x,y] not in center_list_b):
                                             #print(center)
-                                            
+                                            list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"dopn"))
                                             if [x,y] not in list_n:
                                                 list_n.append([x,y])
                                             
@@ -1836,21 +2032,33 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break 
                                     center=[x,y]
                                 
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j])       
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j])       
                                                           
                             #doleva dolu od středu dámy
                             for i in range(len(w_q)):
                                 hop=False
                                 batch=Uzel(w_q[i].get_name())
+                                list_above=[]
                                 list_n=[]
                                 x=0    #pomocné prom
                                 y=0
@@ -1877,7 +2085,7 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                     #pokud bílá
                                     elif (hop==True) & ([x,y] not in center_list_b):
                                             #print(center)
-                                            
+                                            list_above.append(queen_again_move_w(center_list_w,center_list_b,x,y,"dold"))
                                             if [x,y] not in list_n:
                                                 list_n.append([x,y])
                                             
@@ -1903,22 +2111,34 @@ def mode_pvp(w_s,b_s,Pls,t_a_b,t_a_w,w_q,b_q,wait_q_w,wait_q_b):
                                         break 
                                     center=[x,y]
                                 
-                                if list_n != []: 
-                                    if  w_q[i].get_name() not in queen_pref_d.keys():
-                                        
+                                list_above=list(filter(None,list_above))
+                                if list_above==[]:
+                                    if list_n != []: 
+                                        if  w_q[i].get_name() not in queen_pref_d.keys():
+                                            
+                                            queen_pref_d[w_q[i].get_name()]=[]
+                                            
+                                            for j in range(len(list_n)):            
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                        else:
+                                            for j in range(len(list_n)): 
+                                                queen_pref_d[w_q[i].get_name()].append(list_n[j])    
+                                else:
+                                    if  w_q[i].get_name() not in queen_pref_d.keys():                                            
                                         queen_pref_d[w_q[i].get_name()]=[]
-                                        
-                                        for j in range(len(list_n)):            
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j]) 
+                                            
+                                        for j in range(len(list_above)):            
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j]) 
                                     else:
                                         for j in range(len(list_n)): 
-                                            queen_pref_d[w_q[i].get_name()].append(list_n[j])     
+                                            queen_pref_d[w_q[i].get_name()].append(list_above[j])     
                                 
 
                             
-                            print(f"dámy? = {queen_pref_d}")
+                            print(f"braní pro dámy po skoku{queen_pref_d}")
 
                             dictionary_w=queens_move(w_q,center_list_w,center_list_b)
+                            print(f"braní prokameny po skoku {preference_d}")
                             #projdu každý kámen
                             for i in range(len(w_s)):
 
